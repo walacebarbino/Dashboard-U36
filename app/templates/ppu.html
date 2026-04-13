@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}PPU{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <header class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Dashboard Tubulação - CONSAG U36</h1>
+            <p class="dashboard-date" id="dataAtual">--/--/----</p>
+        </div>
+    </header>
+
+    <nav class="dashboard-nav-row">
+        <a href="{{ url_for('pages.ppu') }}" class="nav-tab active">📋 PPU</a>
+        <a href="{{ url_for('pages.dashboard') }}" class="nav-tab">📈 KPIs</a>
+    </nav>
+
+    <section class="panel panel-ppu-light">
+        <div class="panel-header panel-header-inline">
+            <h2 class="ppu-title">PPU - Tabela Detalhada</h2>
+            <input
+                type="text"
+                id="filtroPPU"
+                class="search-input search-input-light"
+                placeholder="Filtrar por ITEM ou descrição..."
+            >
+        </div>
+
+        <div id="blocosPPU"></div>
+    </section>
+</div>
+
+<script src="{{ url_for('static', filename='js/ppu.js') }}"></script>
+{% endblock %}

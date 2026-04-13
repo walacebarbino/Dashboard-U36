@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+    <header class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Dashboard Tubulação - CONSAG U36</h1>
+            <p class="dashboard-date" id="dataAtual">--/--/----</p>
+        </div>
+    </header>
+
+    <nav class="dashboard-nav-row">
+        <a href="{{ url_for('pages.ppu') }}" class="nav-tab">📋 PPU</a>
+        <a href="{{ url_for('pages.dashboard') }}" class="nav-tab active">📈 KPIs</a>
+    </nav>
+
+    <section class="kpi-grid">
+        <div class="kpi-card">
+            <span class="kpi-label">Peso total</span>
+            <strong class="kpi-value" id="kpiTotal">0.00 t</strong>
+        </div>
+
+        <div class="kpi-card kpi-success">
+            <span class="kpi-label">Inspecionado</span>
+            <strong class="kpi-value" id="kpiInspecionado">0.00 t</strong>
+            <small class="kpi-extra" id="percConcluido">0%</small>
+        </div>
+
+        <div class="kpi-card kpi-warning">
+            <span class="kpi-label">À inspecionar</span>
+            <strong class="kpi-value" id="kpiPendente">0.00 t</strong>
+        </div>
+
+        <div class="kpi-card kpi-info">
+            <span class="kpi-label">Itens totais</span>
+            <strong class="kpi-value" id="kpiItens">0</strong>
+        </div>
+    </section>
+
+    <section class="dashboard-main-grid">
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Status Geral (Peso)</h2>
+            </div>
+            <div class="chart-area">
+                <canvas id="meuGrafico"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header panel-header-inline">
+                <h2>Lista Detalhada</h2>
+                <input
+                    type="text"
+                    id="filtro"
+                    class="search-input"
+                    placeholder="Filtrar por TAG, descrição ou código..."
+                >
+            </div>
+
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead id="cabecalhoTabela">
+                        <tr>
+                            <th>ITEM</th>
+                            <th>MAT</th>
+                            <th>DESCRIÇÃO</th>
+                            <th>VALIDADO (Kg)</th>
+                            <th>INSPECIONADO (Kg)</th>
+                            <th>PROGRESSO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoTabela"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
