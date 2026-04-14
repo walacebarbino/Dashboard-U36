@@ -44,8 +44,8 @@ function ehLinhaVazia(item) {
         texto(item["REMANESCENTE (VALID.)"]),
         texto(item["TOTAL À FABRICAR (VALID.)"]),
         texto(item["LIBERADO PELA ENGENHARIA"]),
-        texto(item["À Programar (Fabricação)"])
-        texto(item["Spool Bloq."]);
+        texto(item["À Programar (Fabricação)"]),
+        texto(item["Spool Bloq."]),
         texto(item["Pend. Receb."]),
         texto(item["Take Off"])
     ];
