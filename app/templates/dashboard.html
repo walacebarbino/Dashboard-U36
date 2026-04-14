@@ -16,64 +16,93 @@
         <a href="{{ url_for('pages.dashboard') }}" class="nav-tab active">📈 KPIs</a>
     </nav>
 
+    <!-- CARDS KPI -->
     <section class="kpi-grid">
         <div class="kpi-card">
-            <span class="kpi-label">Peso total</span>
-            <strong class="kpi-value" id="kpiTotal">0.00 t</strong>
+            <span class="kpi-label">Peso total (validado)</span>
+            <strong class="kpi-value" id="kpiPesoTotalValidado">0,00 ton</strong>
         </div>
 
-        <div class="kpi-card kpi-success">
-            <span class="kpi-label">Inspecionado</span>
-            <strong class="kpi-value" id="kpiInspecionado">0.00 t</strong>
-            <small class="kpi-extra" id="percConcluido">0%</small>
+        <div class="kpi-card kpi-ic">
+            <span class="kpi-label">IC emitido</span>
+            <strong class="kpi-value" id="kpiIcEmitido">0,00 ton</strong>
         </div>
 
-        <div class="kpi-card kpi-warning">
-            <span class="kpi-label">À inspecionar</span>
-            <strong class="kpi-value" id="kpiPendente">0.00 t</strong>
+        <div class="kpi-card kpi-reservado">
+            <span class="kpi-label">Reservado/Programado</span>
+            <strong class="kpi-value" id="kpiReservadoProgramado">0,00 ton</strong>
         </div>
 
-        <div class="kpi-card kpi-info">
-            <span class="kpi-label">Itens totais</span>
-            <strong class="kpi-value" id="kpiItens">0</strong>
+        <div class="kpi-card kpi-estoque">
+            <span class="kpi-label">Em estoque</span>
+            <strong class="kpi-value" id="kpiEmEstoque">0,00 ton</strong>
+        </div>
+
+        <div class="kpi-card kpi-pendente">
+            <span class="kpi-label">Pend. recebimento</span>
+            <strong class="kpi-value" id="kpiPendRecebimento">0,00 ton</strong>
+        </div>
+
+        <div class="kpi-card kpi-takeoff">
+            <span class="kpi-label">Take Off</span>
+            <strong class="kpi-value" id="kpiTakeOff">0,00 ton</strong>
         </div>
     </section>
 
+    <!-- LINHA 1: STATUS FABRICAÇÃO x PPU INTERATIVO -->
     <section class="dashboard-main-grid">
+        <!-- Status Fabricação -->
         <div class="panel">
             <div class="panel-header">
-                <h2>Status Geral (Peso)</h2>
+                <h2>Status Fabricação (Peso)</h2>
             </div>
             <div class="chart-area">
                 <canvas id="meuGrafico"></canvas>
             </div>
         </div>
 
+        <!-- PPU Interativo (layout, cálculos virão depois) -->
         <div class="panel">
             <div class="panel-header panel-header-inline">
-                <h2>Lista Detalhada</h2>
-                <input
-                    type="text"
-                    id="filtro"
-                    class="search-input"
-                    placeholder="Filtrar por TAG, descrição ou código..."
-                >
+                <h2>PPU Interativo</h2>
+                <select id="filtroPpu" class="search-input">
+                    <option value="todos">Todos os itens PPU</option>
+                    <!-- depois vamos preencher com opções reais -->
+                </select>
             </div>
 
-            <div class="table-wrapper">
-                <table class="data-table">
-                    <thead id="cabecalhoTabela">
-                        <tr>
-                            <th>ITEM</th>
-                            <th>MAT</th>
-                            <th>DESCRIÇÃO</th>
-                            <th>VALIDADO (Kg)</th>
-                            <th>INSPECIONADO (Kg)</th>
-                            <th>PROGRESSO</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corpoTabela"></tbody>
-                </table>
+            <div class="chart-area">
+                <!-- futuramente: gráfico donut + legendas -->
+                <p style="opacity: 0.6;">Gráfico PPU Interativo em desenvolvimento</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- LINHA 2: MATERIAIS POR DATA PREVISTA x TAKE OFF -->
+    <section class="dashboard-main-grid" style="margin-top: 20px;">
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Materiais por Data Prevista</h2>
+                <p class="panel-subtitle">
+                    Peso total dos spools pendentes, agrupado pela data prevista do material
+                </p>
+            </div>
+            <div class="chart-area">
+                <!-- futuro gráfico de barras -->
+                <p style="opacity: 0.6;">Em desenvolvimento</p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Take Off</h2>
+                <p class="panel-subtitle">
+                    Peso total dos spools em cada tipo de agrupamento
+                </p>
+            </div>
+            <div class="chart-area">
+                <!-- futuro gráfico de barras -->
+                <p style="opacity: 0.6;">Em desenvolvimento</p>
             </div>
         </div>
     </section>
