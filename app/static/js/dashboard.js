@@ -28,14 +28,7 @@ function normalizarNumero(valor) {
 }
 
 function formatarToneladas(valorKg) {
-    return `${(valorKg / 1000).toFixed(2)} t`;
-}
-
-function formatarKg(valor) {
-    return valor.toLocaleString("pt-BR", {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-    });
+    return `${(valorKg / 1000).toFixed(2)} ton`;
 }
 
 function carregarDashboard() {
@@ -56,14 +49,11 @@ function carregarDashboard() {
 }
 
 function processarDashboard(data) {
-    const corpoTabela = document.getElementById("corpoTabela");
-
+    // Acumuladores básicos
     let totalFabricar = 0;
     let totalLiberado = 0;
     let totalProgramar = 0;
     let itensValidos = 0;
-
-    let html = "";
 
     data.forEach(item => {
         const itemCodigo = item["ITEM"] ?? "";
@@ -83,45 +73,43 @@ function processarDashboard(data) {
             totalFabricar += totalFabricarItem;
             totalLiberado += liberadoItem;
             totalProgramar += programarItem;
-
-            let percentual = totalFabricarItem > 0
-                ? (liberadoItem / totalFabricarItem) * 100
-                : 0;
-
-            if (percentual > 100) percentual = 100;
-            if (percentual < 0) percentual = 0;
-
-            html += `
-                <tr>
-                    <td class="text-highlight">${itemCodigo}</td>
-                    <td><span class="badge-mat">${mat}</span></td>
-                    <td>
-                        <strong>${ppu}</strong><br>
-                        <span>${descricao}</span><br>
-                        <small style="color:#8b949e;">${regra}</small>
-                    </td>
-                    <td>${formatarKg(totalFabricarItem)}</td>
-                    <td>${formatarKg(liberadoItem)}</td>
-                    <td class="progress-cell">
-                        <div class="progress-bar-bg">
-                            <div class="progress-bar-fill" style="width: ${percentual.toFixed(1)}%;"></div>
-                        </div>
-                        <small>${percentual.toFixed(1)}%</small>
-                    </td>
-                </tr>
-            `;
         }
     });
 
-    corpoTabela.innerHTML = html;
+    // Mapeando para os novos IDs dos cards KPI
+    const elPesoTotalValidado = document.getElementById("kpiPesoTotalValidado");
+    const elIcEmitido = document.getElementById("kpiIcEmitido");
+    const elReservadoProgramado = document.getElementById("kpiReservadoProgramado");
+    const elEmEstoque = document.getElementById("kpiEmEstoque");
+    const elPendRecebimento = document.getElementById("kpiPendRecebimento");
+    const elTakeOff = document.getElementById("kpiTakeOff");
 
-    document.getElementById("kpiTotal").innerText = formatarToneladas(totalFabricar);
-    document.getElementById("kpiInspecionado").innerText = formatarToneladas(totalLiberado);
-    document.getElementById("kpiPendente").innerText = formatarToneladas(totalProgramar);
-    document.getElementById("kpiItens").innerText = itensValidos;
+    // Aqui eu estou só preenchendo com base nos 3 números que já tínhamos;
+    // depois, se você quiser, a gente detalha melhor a lógica de cada card
 
+    if (elPesoTotalValidado) {
+        elPesoTotalValidado.textContent = formatarToneladas(totalFabricar);
+    }
+    if (elIcEmitido) {
+        elIcEmitido.textContent = formatarToneladas(totalLiberado);
+    }
+    if (elReservadoProgramado) {
+        elReservadoProgramado.textContent = formatarToneladas(totalProgramar);
+    }
+
+    // Por enquanto vamos zerar estes 3 até você definir a regra:
+    if (elEmEstoque) {
+        elEmEstoque.textContent = "0,00 ton";
+    }
+    if (elPendRecebimento) {
+        elPendRecebimento.textContent = "0,00 ton";
+    }
+    if (elTakeOff) {
+        elTakeOff.textContent = "0,00 ton";
+    }
+
+    // Percentual geral para o gráfico (mesma lógica de antes)
     const percGeral = totalFabricar > 0 ? (totalLiberado / totalFabricar) * 100 : 0;
-    document.getElementById("percConcluido").innerText = `${percGeral.toFixed(1)}%`;
 
     desenharGrafico(totalLiberado, totalProgramar);
     ativarFiltro();
@@ -165,6 +153,9 @@ function desenharGrafico(liberado, programar) {
 }
 
 function ativarFiltro() {
+    // No layout novo não existe mais #filtro nem #corpoTabela;
+    // então, por enquanto, vamos só garantir que isso não quebre o script.
+
     const filtro = document.getElementById("filtro");
     if (!filtro) return;
 

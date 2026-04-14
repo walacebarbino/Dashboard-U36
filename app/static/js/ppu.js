@@ -45,6 +45,9 @@ function ehLinhaVazia(item) {
         texto(item["TOTAL À FABRICAR (VALID.)"]),
         texto(item["LIBERADO PELA ENGENHARIA"]),
         texto(item["À Programar (Fabricação)"])
+        texto(item["Spool Bloq."]);
+        texto(item["Pend. Receb."]),
+        texto(item["Take Off"])
     ];
 
     return campos.every(c => c === "" || c === "0" || c === "0,0" || c === "0.0");

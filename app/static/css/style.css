@@ -73,9 +73,10 @@ body {
     border-color: #5f95ef;
 }
 
+/* === CARDS KPI (6 NA MESMA LINHA) === */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(220px, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));  /* 6 cards em uma linha */
     gap: 16px;
     margin-bottom: 24px;
 }
@@ -86,7 +87,27 @@ body {
     border-left: 4px solid #58a6ff;
     border-radius: 14px;
     padding: 18px;
-    min-height: 110px;
+    min-height: 90px;          /* um pouco mais baixo pra caber na largura */
+}
+
+.kpi-ic {
+    border-left-color: #a855f7;      /* roxo */
+}
+
+.kpi-reservado {
+    border-left-color: #f97316;      /* laranja */
+}
+
+.kpi-estoque {
+    border-left-color: #06b6d4;      /* ciano */
+}
+
+.kpi-pendente {
+    border-left-color: #eab308;      /* amarelo */
+}
+
+.kpi-takeoff {
+    border-left-color: #22c55e;      /* verde */
 }
 
 .kpi-success {
@@ -103,31 +124,32 @@ body {
 
 .kpi-label {
     display: block;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: #8b949e;
     text-transform: uppercase;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-weight: 600;
 }
 
 .kpi-value {
     display: block;
-    font-size: 1.9rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: #f0f6fc;
 }
 
 .kpi-extra {
     display: inline-block;
-    margin-top: 8px;
+    margin-top: 6px;
     color: #3fb950;
     font-size: 0.9rem;
     font-weight: 600;
 }
 
+/* === GRIDS DOS PAINÉIS === */
 .dashboard-main-grid {
     display: grid;
-    grid-template-columns: 1fr 1.4fr;
+    grid-template-columns: 1.1fr 1.9fr;  /* esquerda x direita (Status x PPU / Materiais x Take Off) */
     gap: 20px;
     align-items: start;
 }
@@ -176,6 +198,7 @@ body {
     height: 350px;
 }
 
+/* tabela dentro do painel PPU Interativo */
 .table-wrapper {
     max-height: 500px;
     overflow: auto;
@@ -245,6 +268,7 @@ body {
     font-weight: 700;
 }
 
+/* === RESPONSIVO === */
 @media (max-width: 1100px) {
     .dashboard-main-grid {
         grid-template-columns: 1fr;
@@ -287,6 +311,8 @@ body {
         flex-wrap: wrap;
     }
 }
+
+/* ==== estilos já existentes do PPU (mantidos) ==== */
 
 .panel-ppu-light {
     background: #111827;
