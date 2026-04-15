@@ -57,7 +57,7 @@
                 <h2>Status Fabricação (Peso)</h2>
             </div>
             <div class="chart-area">
-                <canvas id="meuGrafico"></canvas>
+                <p style="opacity: 0.6;">Em desenvolvimento</p>
             </div>
         </div>
 
@@ -71,9 +71,12 @@
                 </select>
             </div>
 
-            <div class="chart-area">
-                <!-- futuramente: gráfico donut + legendas -->
-                <p style="opacity: 0.6;">Gráfico PPU Interativo em desenvolvimento</p>
+            <div class="grafico-ppu-wrap">
+                <div class="grafico-ppu-canvas">
+                    <canvas id="meuGrafico"></canvas>
+                </div>
+
+                <div id="legendaPpuCustom" class="legenda-ppu-custom"></div>
             </div>
         </div>
     </section>

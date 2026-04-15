@@ -76,7 +76,7 @@ body {
 /* === CARDS KPI (6 NA MESMA LINHA) === */
 .kpi-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));  /* 6 cards em uma linha */
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 16px;
     margin-bottom: 24px;
 }
@@ -87,27 +87,27 @@ body {
     border-left: 4px solid #58a6ff;
     border-radius: 14px;
     padding: 18px;
-    min-height: 90px;          /* um pouco mais baixo pra caber na largura */
+    min-height: 90px;
 }
 
 .kpi-ic {
-    border-left-color: #a855f7;      /* roxo */
+    border-left-color: #a855f7;
 }
 
 .kpi-reservado {
-    border-left-color: #f97316;      /* laranja */
+    border-left-color: #f97316;
 }
 
 .kpi-estoque {
-    border-left-color: #06b6d4;      /* ciano */
+    border-left-color: #06b6d4;
 }
 
 .kpi-pendente {
-    border-left-color: #eab308;      /* amarelo */
+    border-left-color: #eab308;
 }
 
 .kpi-takeoff {
-    border-left-color: #22c55e;      /* verde */
+    border-left-color: #22c55e;
 }
 
 .kpi-success {
@@ -169,7 +169,9 @@ body {
 }
 
 .chart-area {
+    position: relative;
     flex: 1;
+    min-height: 350px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -193,9 +195,9 @@ body {
 
 .panel-header-inline {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
 }
 
 .search-input {
@@ -211,11 +213,6 @@ body {
 
 .search-input::placeholder {
     color: #8b949e;
-}
-
-.chart-area {
-    position: relative;
-    height: 350px;
 }
 
 /* tabela dentro do painel PPU Interativo */
@@ -330,6 +327,10 @@ body {
     .dashboard-nav-row {
         flex-wrap: wrap;
     }
+
+    .chart-area {
+        min-height: 300px;
+    }
 }
 
 /* ==== estilos já existentes do PPU (mantidos) ==== */
@@ -363,7 +364,7 @@ body {
     overflow: hidden;
 }
 
-ppu-section-title {
+.ppu-section-title {
     background: #141c2b;
     color: #f8fafc;
     font-size: 1rem;
@@ -450,15 +451,15 @@ ppu-section-title {
 
 /* Spool Bloq. (coluna 11) */
 .ppu-table tbody td:nth-child(11) {
-    color: #ff1d5d;   /* rosa */
+    color: #ff1d5d;
 }
 
 /* Pend. Receb. (coluna 12) */
 .ppu-table tbody td:nth-child(12) {
-    color: #f79f23;   /* laranja */
+    color: #f79f23;
 }
 
 /* Take Off (coluna 13) */
 .ppu-table tbody td:nth-child(13) {
-    color: hsl(335, 92%, 63%);   /* roxo/rosa */
+    color: hsl(335, 92%, 63%);
 }
