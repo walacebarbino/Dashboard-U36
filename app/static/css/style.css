@@ -463,3 +463,52 @@ body {
 .ppu-table tbody td:nth-child(13) {
     color: hsl(335, 92%, 63%);
 }
+
+.grafico-ppu-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    width: 100%;
+}
+
+.legenda-ppu-custom {
+    flex: 0 0 260px;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+}
+
+.legenda-ppu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e2e8f0;
+    font-size: 15px;
+    line-height: 1.2;
+}
+
+.legenda-ppu-cor {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    min-width: 12px;
+    min-height: 12px;
+    border-radius: 2px;
+    flex: 0 0 12px;
+}
+
+.legenda-ppu-texto {
+    min-width: 88px;
+}
+
+.legenda-ppu-valor {
+    font-weight: 600;
+}
+
+.legenda-ppu-pct {
+    color: #94a3b8;
+}
+

@@ -224,9 +224,9 @@ function atualizarGraficoPpu(data, itemSelecionado = "todos") {
     });
 
     if (itemSelecionado === "todos") {
+        fabricarLegenda = totalFabricar;
         montarLegenda = totalMontar;
-        fabricarLegenda = Math.max(totalFabricar - totalMontar, 0);
-        valorCentro = totalMontar;
+        valorCentro = totalFabricar + totalMontar;
     } else {
         fabricarLegenda = totalFabricar;
         montarLegenda = totalMontar;
@@ -249,18 +249,8 @@ function pluginTextoCentroGrafico() {
             const x = meta.data[0].x;
             const y = meta.data[0].y;
 
-            const elValorCentro =
-                document.getElementById("graficoPpuValorCentro") ||
-                document.getElementById("valorCentroGrafico") ||
-                document.getElementById("donutCenterValue");
-
-            const elSubtituloCentro =
-                document.getElementById("graficoPpuSubtituloCentro") ||
-                document.getElementById("subtituloCentroGrafico") ||
-                document.getElementById("donutCenterLabel");
-
-            const valorCentro = elValorCentro ? elValorCentro.textContent : "";
-            const subtitulo = elSubtituloCentro ? elSubtituloCentro.textContent : "Escopo PPU";
+            const valorCentro = chart.config.options.plugins.textoCentro?.valor ?? "";
+            const subtitulo = chart.config.options.plugins.textoCentro?.subtitulo ?? "Escopo PPU";
 
             ctx.save();
             ctx.textAlign = "center";
@@ -304,11 +294,16 @@ function desenharGrafico(fabricar, montar) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: "72%",
+            radius: '80%',
+            cutout: "55%",
             layout: {
                 padding: 0
             },
             plugins: {
+                textoCentro: {
+                valor: formatarNumeroBr(fabricar + montar),
+                subtitulo: "Escopo PPU"
+                },
                 legend: {
                     display: false
                 },
@@ -328,13 +323,20 @@ function desenharGrafico(fabricar, montar) {
     });
 
     renderizarLegendaPpuCustom(fabricar, montar);
+
+    function formatarNumeroBr(valor, casas = 0) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+        minimumFractionDigits: casas,
+        maximumFractionDigits: casas
+    });
+    }
 }
 
 function renderizarLegendaPpuCustom(fabricar, montar) {
     const container = document.getElementById("legendaPpuCustom");
     if (!container) return;
-
-    const total = Number(fabricar || 0) + Number(montar || 0);  
+    
+    const total = Number(fabricar || 0) + Number(montar || 0);
 
     const itens = [
         { label: "Fabricação", valor: Number(fabricar || 0), cor: "#78a2fd" },
@@ -348,11 +350,19 @@ function renderizarLegendaPpuCustom(fabricar, montar) {
             <div class="legenda-ppu-item">
                 <span class="legenda-ppu-cor" style="background:${item.cor};"></span>
                 <span class="legenda-ppu-texto">${item.label}</span>
-                <span class="legenda-ppu-valor">${formatarNumeroBr(item.valor)}</span>
-                <span class="legenda-ppu-pct">${formatarNumeroBr(percentual)}%</span>
+                <span class="legenda-ppu-valor">${formatarNumeroBr(item.valor, 0)}</span>
+                <span class="legenda-ppu-pct">${formatarNumeroBr(percentual, 2)}%</span>
             </div>
         `;
     }).join("");
+
+    function formatarNumeroBr(valor, casas = 0) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+        minimumFractionDigits: casas,
+        maximumFractionDigits: casas
+    });
+    }
+
 }
 
 preencherDataAtual();
