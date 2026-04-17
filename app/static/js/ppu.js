@@ -44,7 +44,7 @@ function ehLinhaVazia(item) {
         texto(item["REMANESCENTE (VALID.)"]),
         texto(item["TOTAL À FABRICAR (VALID.)"]),
         texto(item["LIBERADO PELA ENGENHARIA"]),
-        texto(item["À Programar (Fabricação)"]),
+        texto(item["Em fabricação"]),
         texto(item["Spool Bloq."]),
         texto(item["Pend. Receb."]),
         texto(item["Take Off"])
@@ -104,7 +104,7 @@ function montarLinha(item) {
     const reparo              = normalizarNumero(item["REPARO"]);
     let   totalFabricar       = normalizarNumero(item["TOTAL À FABRICAR (VALID.)"]);
     const liberadoEngenharia  = normalizarNumero(item["LIBERADO PELA ENGENHARIA"]);
-    const aProgramar          = normalizarNumero(item["À Programar (Fabricação)"]);
+    const aProgramar          = normalizarNumero(item["Em fabricação"]);
     const spoolBloq           = normalizarNumero(item["Spool Bloq."]);
     const pendReceb           = normalizarNumero(item["Pend. Receb."]);
     const takeOff             = normalizarNumero(item["Take Off"]);
@@ -149,7 +149,7 @@ function montarTabela(titulo, dados) {
                             <th>REPARO</th>
                             <th>TOTAL À FABRICAR (VALID.)</th>
                             <th>LIBERADO PELA ENGENHARIA</th>
-                            <th>À Programar (Fabricação)</th>
+                            <th>Em fabricação</th>
                             <th>Spool Bloq.</th>
                             <th>Pend. Receb.</th>
                             <th>Take Off</th>
