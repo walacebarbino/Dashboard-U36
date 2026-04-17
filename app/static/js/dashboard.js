@@ -90,11 +90,16 @@ function processarDashboard(data) {
     let totalLiberado = 0;
     let totalProgramar = 0;
 
+    if (!Array.isArray(data)) {
+        console.warn("processarDashboard: data inválido", data);
+        return;
+    }
+
     data.forEach(item => {
         const itemCodigo = item["ITEM"] ?? "";
         const ppu = item["PPU"] ?? "";
         const mat = item["MAT"] ?? "";
-        const regra = item["REGRA"] ?? "";
+        const regra = String(item["REGRA"] ?? "").trim().toLowerCase();
         const descricao = item["DESCRIÇÃO"] ?? "";
 
         const totalFabricarItem = normalizarNumero(item["TOTAL À FABRICAR (VALID.)"]);
@@ -102,10 +107,15 @@ function processarDashboard(data) {
         const programarItem = normalizarNumero(item["À Programar (Fabricação)"]);
 
         const temBase = itemCodigo || ppu || mat || regra || descricao;
+        const regraValidaParaFabricar =
+            regra.includes("fabricar") || regra.includes("montar");
 
-        if (temBase) {
+        if (temBase && regraValidaParaFabricar) {
             totalFabricar += totalFabricarItem;
             totalLiberado += liberadoItem;
+        }
+
+        if (temBase) {
             totalProgramar += programarItem;
         }
     });
@@ -120,7 +130,6 @@ function processarDashboard(data) {
     if (elPesoTotalValidado) elPesoTotalValidado.textContent = formatarToneladas(totalFabricar);
     if (elIcEmitido) elIcEmitido.textContent = formatarToneladas(totalLiberado);
     if (elReservadoProgramado) elReservadoProgramado.textContent = formatarToneladas(totalProgramar);
-
     if (elEmEstoque) elEmEstoque.textContent = "0,00 ton";
     if (elPendRecebimento) elPendRecebimento.textContent = "0,00 ton";
     if (elTakeOff) elTakeOff.textContent = "0,00 ton";
