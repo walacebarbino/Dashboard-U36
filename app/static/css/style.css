@@ -91,35 +91,35 @@ body {
 }
 
 .kpi-ic {
-    border-left-color: #a855f7;
+    border-left-color: #8509f9;
 }
 
 .kpi-reservado {
-    border-left-color: #f97316;
+    border-left-color: #1ffb8d;
 }
 
 .kpi-estoque {
-    border-left-color: #06b6d4;
+    border-left-color: #ffa601;
 }
 
 .kpi-pendente {
-    border-left-color: #eab308;
+    border-left-color: #fd3a3a;
 }
 
 .kpi-takeoff {
-    border-left-color: #22c55e;
+    border-left-color: #ef48ac;
 }
 
 .kpi-success {
-    border-left-color: #2ea043;
+    border-left-color: #25b33f;
 }
 
 .kpi-warning {
-    border-left-color: #d29922;
+    border-left-color: #dff96e;
 }
 
 .kpi-info {
-    border-left-color: #a371f7;
+    border-left-color: #6d1bf9;
 }
 
 .kpi-label {
