@@ -133,6 +133,10 @@ function montarLinha(item) {
 }
 
 function montarTabela(titulo, dados) {
+    const headerTotal = titulo === "MONTAGEM"
+        ? "TOTAL À MONTAR (VALID.)"
+        : "TOTAL À FABRICAR (VALID.)";
+
     return `
         <div class="ppu-block">
             <div class="ppu-section-title">${titulo}</div>
@@ -147,7 +151,7 @@ function montarTabela(titulo, dados) {
                             <th>BASE REM. CONTRATO</th>
                             <th>REMANESCENTE (VALID.)</th>
                             <th>REPARO</th>
-                            <th>TOTAL À FABRICAR (VALID.)</th>
+                            <th>${headerTotal}</th>
                             <th>LIBERADO PELA ENGENHARIA</th>
                             <th>Em fabricação</th>
                             <th>Spool Bloq.</th>
