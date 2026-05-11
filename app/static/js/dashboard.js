@@ -192,11 +192,20 @@ function renderizarStatusFabricacaoMontagem(data) {
         }
     });
 
+    const maxEscala = Math.max(
+        dadosFabricacao.contrato,
+        dadosFabricacao.baseRem,
+        dadosFabricacao.totalValid,
+        dadosMontagem.contrato,
+        dadosMontagem.baseRem,
+        dadosMontagem.totalValid
+    );
+
     renderizarLegendaStatus("legendStatusFabricacao", "fabricacao");
     renderizarLegendaStatus("legendStatusMontagem", "montagem");
 
-    renderizarGraficoStatus("statusFabricacaoChart", dadosFabricacao, "fabricacao");
-    renderizarGraficoStatus("statusMontagemChart", dadosMontagem, "montagem");
+    renderizarGraficoStatus("statusFabricacaoChart", dadosFabricacao, "fabricacao", maxEscala);
+    renderizarGraficoStatus("statusMontagemChart", dadosMontagem, "montagem", maxEscala);
 }
 
 function renderizarLegendaStatus(containerId, tipo = "fabricacao") {
@@ -221,7 +230,7 @@ function renderizarLegendaStatus(containerId, tipo = "fabricacao") {
     `).join("");
 }
 
-function renderizarGraficoStatus(canvasId, dados, tipo) {
+function renderizarGraficoStatus(canvasId, dados, tipo, maxEscala) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
@@ -286,6 +295,7 @@ function renderizarGraficoStatus(canvasId, dados, tipo) {
             scales: {
                 x: {
                     beginAtZero: true,
+                    max: maxEscala,
                     grid: { display: false },
                     ticks: { display: false },
                     border: { display: false }
@@ -306,13 +316,19 @@ function renderizarGraficoStatus(canvasId, dados, tipo) {
 
                 meta.data.forEach((bar, index) => {
                     const valor = dataset.data[index];
+                    const texto = formatarNumeroBr(valor, 0);
 
                     ctx.save();
-                    ctx.fillStyle = "#ffffff";
-                    ctx.font = "12px DM Sans, sans-serif";
+                    ctx.font = "700 15px DM Sans, sans-serif";
+                    ctx.fillStyle = "#000000";
                     ctx.textAlign = "left";
                     ctx.textBaseline = "middle";
-                    ctx.fillText(formatarNumeroBr(valor, 0), bar.x + 10, bar.y);
+
+                    const larguraTexto = ctx.measureText(texto).width;
+                    const paddingInterno = 8;
+                    const xTexto = bar.x - larguraTexto - paddingInterno;
+
+                    ctx.fillText(texto, xTexto, bar.y);
                     ctx.restore();
                 });
             }
