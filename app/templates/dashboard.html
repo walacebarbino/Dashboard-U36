@@ -51,18 +51,32 @@
 
     <!-- LINHA 1: STATUS FABRICAÇÃO x PPU INTERATIVO -->
     <section class="dashboard-main-grid">
-        <!-- Status Fabricação -->
-        <div class="panel">
-            <div class="panel-header">
-                <h2>Status Fabricação (Peso)</h2>
-            </div>
-            <div class="chart-area">
+    <!-- Status Fabricação / Montagem -->
+    <div class="panel">
+        <div class="panel-header">
+            <h2>Status Fabricação/Montagem (Peso)</h2>
+        </div>
+
+        <div class="chart-area status-duplo-area">
+            <div class="status-bloco">
+                <h3 class="status-subtitulo">Fabricação</h3>
                 <div id="legendStatusFabricacao" class="legend-status-fabricacao"></div>
-                <div class="status-fabricacao-wrap" style="position: relative; height: 150px;">
+                <div class="status-fabricacao-wrap">
                     <canvas id="statusFabricacaoChart"></canvas>
                 </div>
             </div>
+
+            <div class="status-divisor"></div>
+
+            <div class="status-bloco">
+                <h3 class="status-subtitulo">Montagem</h3>
+                <div id="legendStatusMontagem" class="legend-status-fabricacao"></div>
+                <div class="status-fabricacao-wrap">
+                    <canvas id="statusMontagemChart"></canvas>
+                </div>
+            </div>
         </div>
+    </div>
 
         <!-- PPU Interativo (layout, cálculos virão depois) -->
         <div class="panel">

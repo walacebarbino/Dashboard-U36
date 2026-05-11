@@ -1,6 +1,7 @@
 let meuGraficoObj = null;
 let dadosOriginaisDashboard = [];
 let statusFabricacaoChartObj = null;
+let statusMontagemChartObj = null;
 
 const MAPA_CONCATENACAO_PPU = [
     { value: "4.3.5.1.1 / 4.3.5.4.2", itens: ["4.3.5.1.1", "4.3.5.4.2"] },
@@ -62,6 +63,29 @@ function obterValorColunaG(item) {
         item["COLUNA G"] ??
         item["VALOR G"] ??
         item["QTD CONTRATO"] ??
+        0
+    );
+}
+
+function obterValorColunaH(item) {
+    return normalizarNumero(
+        item["H"] ??
+        item["COLUNA H"] ??
+        item["VALOR H"] ??
+        item["BASE REM. CONTRATO"] ??
+        0
+    );
+}
+
+function obterValorColunaK(item) {
+    return normalizarNumero(
+        item["K"] ??
+        item["COLUNA K"] ??
+        item["VALOR K"] ??
+        item["TOTAL À FABRICAR (VALID.)"] ??
+        item["TOTAL A FABRICAR (VALID.)"] ??
+        item["TOTAL À MONTAR (VALID.)"] ??
+        item["TOTAL A MONTAR (VALID.)"] ??
         0
     );
 }
@@ -136,17 +160,57 @@ function processarDashboard(data) {
     if (elTakeOff) elTakeOff.textContent = "0,00 ton";
 
     atualizarGraficoPpu(data, "todos");
-    renderizarStatusFabricacao(data);
+    renderizarStatusFabricacaoMontagem(data);
 }
 
-function renderizarLegendaStatusFabricacao() {
-    const container = document.getElementById("legendStatusFabricacao");
+function renderizarStatusFabricacaoMontagem(data) {
+    if (!Array.isArray(data)) return;
+
+    const dadosFabricacao = {
+        contrato: 0,
+        baseRem: 0,
+        totalValid: 0
+    };
+
+    const dadosMontagem = {
+        contrato: 0,
+        baseRem: 0,
+        totalValid: 0
+    };
+
+    data.forEach(item => {
+        const regra = String(item["REGRA"] ?? "").trim().toUpperCase();
+
+        if (regra === "FABRICAR") {
+            dadosFabricacao.contrato += obterValorColunaG(item);
+            dadosFabricacao.baseRem += obterValorColunaH(item);
+            dadosFabricacao.totalValid += obterValorColunaK(item);
+        } else if (regra === "MONTAR") {
+            dadosMontagem.contrato += obterValorColunaG(item);
+            dadosMontagem.baseRem += obterValorColunaH(item);
+            dadosMontagem.totalValid += obterValorColunaK(item);
+        }
+    });
+
+    renderizarLegendaStatus("legendStatusFabricacao", "fabricacao");
+    renderizarLegendaStatus("legendStatusMontagem", "montagem");
+
+    renderizarGraficoStatus("statusFabricacaoChart", dadosFabricacao, "fabricacao");
+    renderizarGraficoStatus("statusMontagemChart", dadosMontagem, "montagem");
+}
+
+function renderizarLegendaStatus(containerId, tipo = "fabricacao") {
+    const container = document.getElementById(containerId);
     if (!container) return;
+
+    const labelFinal = tipo === "montagem"
+        ? "TOTAL À MONTAR (VALID.)"
+        : "TOTAL À FABRICAR (VALID.)";
 
     const itens = [
         { label: "CONTRATO", cor: "#d9d9d9" },
         { label: "BASE REM. CONTRATO", cor: "#ff7a1a" },
-        { label: "TOTAL À FABRICAR (VALID)", cor: "#4c7ee8" }
+        { label: labelFinal, cor: "#4c7ee8" }
     ];
 
     container.innerHTML = itens.map(item => `
@@ -157,49 +221,39 @@ function renderizarLegendaStatusFabricacao() {
     `).join("");
 }
 
-function renderizarStatusFabricacao(data) {
-    const canvas = document.getElementById("statusFabricacaoChart");
-    if (!canvas || !Array.isArray(data)) return;
-
-    const linhaTotal = data.find(item => {
-        const itemValor = String(item["ITEM"] ?? "").trim().toUpperCase();
-        return itemValor === "TOTAL";
-    });
-
-    if (!linhaTotal) {
-        console.warn("Linha TOTAL não encontrada para o gráfico Status Fabricação.");
-        return;
-    }
-
-    const totalQtdContrato = normalizarNumero(linhaTotal["QTD CONTRATO"]);
-    const totalBaseRemContrato = normalizarNumero(linhaTotal["BASE REM. CONTRATO"]);
-    const totalFabricarValid = normalizarNumero(linhaTotal["TOTAL À FABRICAR (VALID.)"]);
+function renderizarGraficoStatus(canvasId, dados, tipo) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
 
-    if (statusFabricacaoChartObj) {
+    if (tipo === "fabricacao" && statusFabricacaoChartObj) {
         statusFabricacaoChartObj.destroy();
     }
 
-    statusFabricacaoChartObj = new Chart(ctx, {
+    if (tipo === "montagem" && statusMontagemChartObj) {
+        statusMontagemChartObj.destroy();
+    }
+
+    const novoGrafico = new Chart(ctx, {
         type: "bar",
         data: {
             labels: [
                 "CONTRATO",
                 "BASE REM. CONTRATO",
-                "TOTAL À FABRICAR (VALID)"
+                tipo === "montagem" ? "TOTAL À MONTAR (VALID.)" : "TOTAL À FABRICAR (VALID.)"
             ],
             datasets: [
                 {
                     data: [
-                        totalQtdContrato,
-                        totalBaseRemContrato,
-                        totalFabricarValid
+                        dados.contrato,
+                        dados.baseRem,
+                        dados.totalValid
                     ],
                     backgroundColor: ["#d9d9d9", "#ff7a1a", "#4c7ee8"],
                     borderColor: ["#d9d9d9", "#ff7a1a", "#4c7ee8"],
                     borderWidth: 1,
-                    barPercentage: 0.8,
+                    barPercentage: 0.7,
                     categoryPercentage: 0.9
                 }
             ]
@@ -211,9 +265,9 @@ function renderizarStatusFabricacao(data) {
             animation: false,
             layout: {
                 padding: {
-                    top: 10,
+                    top: 4,
                     right: 30,
-                    bottom: 10,
+                    bottom: 4,
                     left: 0
                 }
             },
@@ -224,7 +278,7 @@ function renderizarStatusFabricacao(data) {
                 tooltip: {
                     callbacks: {
                         label(context) {
-                            return `${context.dataset.label}: ${formatarNumeroBr(context.raw, 0)}`;
+                            return `${context.label}: ${formatarNumeroBr(context.raw, 0)}`;
                         }
                     }
                 }
@@ -244,10 +298,9 @@ function renderizarStatusFabricacao(data) {
             }
         },
         plugins: [{
-            id: "valueLabelsStatusFabricacao",
+            id: `valueLabelsStatus_${tipo}`,
             afterDatasetsDraw(chart) {
                 const { ctx } = chart;
-
                 const dataset = chart.data.datasets[0];
                 const meta = chart.getDatasetMeta(0);
 
@@ -266,7 +319,11 @@ function renderizarStatusFabricacao(data) {
         }]
     });
 
-    renderizarLegendaStatusFabricacao();
+    if (tipo === "fabricacao") {
+        statusFabricacaoChartObj = novoGrafico;
+    } else {
+        statusMontagemChartObj = novoGrafico;
+    }
 }
 
 function preencherFiltroPpu(data) {
