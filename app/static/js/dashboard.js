@@ -1,5 +1,6 @@
 let meuGraficoObj = null;
 let dadosOriginaisDashboard = [];
+let statusFabricacaoChartObj = null;
 
 const MAPA_CONCATENACAO_PPU = [
     { value: "4.3.5.1.1 / 4.3.5.4.2", itens: ["4.3.5.1.1", "4.3.5.4.2"] },
@@ -48,10 +49,10 @@ function formatarToneladas(valorKg) {
     return `${(valorKg / 1000).toFixed(2)} ton`;
 }
 
-function formatarNumeroBr(valor) {
+function formatarNumeroBr(valor, casas = 2) {
     return Number(valor || 0).toLocaleString("pt-BR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
+        minimumFractionDigits: casas,
+        maximumFractionDigits: casas
     });
 }
 
@@ -135,6 +136,137 @@ function processarDashboard(data) {
     if (elTakeOff) elTakeOff.textContent = "0,00 ton";
 
     atualizarGraficoPpu(data, "todos");
+    renderizarStatusFabricacao(data);
+}
+
+function renderizarLegendaStatusFabricacao() {
+    const container = document.getElementById("legendStatusFabricacao");
+    if (!container) return;
+
+    const itens = [
+        { label: "CONTRATO", cor: "#d9d9d9" },
+        { label: "BASE REM. CONTRATO", cor: "#ff7a1a" },
+        { label: "TOTAL À FABRICAR (VALID)", cor: "#4c7ee8" }
+    ];
+
+    container.innerHTML = itens.map(item => `
+        <div class="legend-status-item">
+            <span class="legend-status-cor" style="background:${item.cor};"></span>
+            <span class="legend-status-texto">${item.label}</span>
+        </div>
+    `).join("");
+}
+
+function renderizarStatusFabricacao(data) {
+    const canvas = document.getElementById("statusFabricacaoChart");
+    if (!canvas || !Array.isArray(data)) return;
+
+    const linhaTotal = data.find(item => {
+        const itemValor = String(item["ITEM"] ?? "").trim().toUpperCase();
+        return itemValor === "TOTAL";
+    });
+
+    if (!linhaTotal) {
+        console.warn("Linha TOTAL não encontrada para o gráfico Status Fabricação.");
+        return;
+    }
+
+    const totalQtdContrato = normalizarNumero(linhaTotal["QTD CONTRATO"]);
+    const totalBaseRemContrato = normalizarNumero(linhaTotal["BASE REM. CONTRATO"]);
+    const totalFabricarValid = normalizarNumero(linhaTotal["TOTAL À FABRICAR (VALID.)"]);
+
+    const ctx = canvas.getContext("2d");
+
+    if (statusFabricacaoChartObj) {
+        statusFabricacaoChartObj.destroy();
+    }
+
+    statusFabricacaoChartObj = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: [
+                "CONTRATO",
+                "BASE REM. CONTRATO",
+                "TOTAL À FABRICAR (VALID)"
+            ],
+            datasets: [
+                {
+                    data: [
+                        totalQtdContrato,
+                        totalBaseRemContrato,
+                        totalFabricarValid
+                    ],
+                    backgroundColor: ["#d9d9d9", "#ff7a1a", "#4c7ee8"],
+                    borderColor: ["#d9d9d9", "#ff7a1a", "#4c7ee8"],
+                    borderWidth: 1,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.9
+                }
+            ]
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            layout: {
+                padding: {
+                    top: 10,
+                    right: 30,
+                    bottom: 10,
+                    left: 0
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label(context) {
+                            return `${context.dataset.label}: ${formatarNumeroBr(context.raw, 0)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    grid: { display: false },
+                    ticks: { display: false },
+                    border: { display: false }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { display: false },
+                    border: { display: false }
+                }
+            }
+        },
+        plugins: [{
+            id: "valueLabelsStatusFabricacao",
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+
+                const dataset = chart.data.datasets[0];
+                const meta = chart.getDatasetMeta(0);
+
+                meta.data.forEach((bar, index) => {
+                    const valor = dataset.data[index];
+
+                    ctx.save();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "12px DM Sans, sans-serif";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(formatarNumeroBr(valor, 0), bar.x + 10, bar.y);
+                    ctx.restore();
+                });
+            }
+        }]
+    });
+
+    renderizarLegendaStatusFabricacao();
 }
 
 function preencherFiltroPpu(data) {
@@ -161,7 +293,6 @@ function preencherFiltroPpu(data) {
         ...MAPA_CONCATENACAO_PPU.flatMap(grupo => grupo.itens),
         ...ITENS_NAO_CONCATENAR
     ]);
-
 }
 
 function configurarFiltroPpu() {
@@ -232,15 +363,9 @@ function atualizarGraficoPpu(data, itemSelecionado = "todos") {
         }
     });
 
-    if (itemSelecionado === "todos") {
-        fabricarLegenda = totalFabricar;
-        montarLegenda = totalMontar;
-        valorCentro = totalFabricar + totalMontar;
-    } else {
-        fabricarLegenda = totalFabricar;
-        montarLegenda = totalMontar;
-        valorCentro = totalFabricar + totalMontar;
-    }
+    fabricarLegenda = totalFabricar;
+    montarLegenda = totalMontar;
+    valorCentro = totalFabricar + totalMontar;
 
     atualizarTextoCentroGrafico(valorCentro, "Escopo PPU");
     desenharGrafico(fabricarLegenda, montarLegenda);
@@ -303,15 +428,15 @@ function desenharGrafico(fabricar, montar) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            radius: '80%',
+            radius: "80%",
             cutout: "55%",
             layout: {
                 padding: 0
             },
             plugins: {
                 textoCentro: {
-                valor: formatarNumeroBr(fabricar + montar),
-                subtitulo: "Escopo PPU"
+                    valor: formatarNumeroBr(fabricar + montar),
+                    subtitulo: "Escopo PPU"
                 },
                 legend: {
                     display: false
@@ -332,19 +457,12 @@ function desenharGrafico(fabricar, montar) {
     });
 
     renderizarLegendaPpuCustom(fabricar, montar);
-
-    function formatarNumeroBr(valor, casas = 0) {
-    return Number(valor || 0).toLocaleString("pt-BR", {
-        minimumFractionDigits: casas,
-        maximumFractionDigits: casas
-    });
-    }
 }
 
 function renderizarLegendaPpuCustom(fabricar, montar) {
     const container = document.getElementById("legendaPpuCustom");
     if (!container) return;
-    
+
     const total = Number(fabricar || 0) + Number(montar || 0);
 
     const itens = [
@@ -364,14 +482,6 @@ function renderizarLegendaPpuCustom(fabricar, montar) {
             </div>
         `;
     }).join("");
-
-    function formatarNumeroBr(valor, casas = 0) {
-    return Number(valor || 0).toLocaleString("pt-BR", {
-        minimumFractionDigits: casas,
-        maximumFractionDigits: casas
-    });
-    }
-
 }
 
 preencherDataAtual();
