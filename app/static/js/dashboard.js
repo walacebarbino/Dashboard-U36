@@ -349,23 +349,54 @@ function preencherFiltroPpu(data) {
     select.innerHTML = `<option value="todos">Todos os itens PPU</option>`;
 
     MAPA_CONCATENACAO_PPU.forEach(grupo => {
+        const itemFab = data.find(item =>
+            String(item["ITEM"] ?? "").trim() === grupo.itens[0]
+        );
+
+        const itemMont = data.find(item =>
+            String(item["ITEM"] ?? "").trim() === grupo.itens[1]
+        );
+
+        let label = grupo.value;
+
+        if (itemFab && itemMont) {
+            const ppuFab = String(itemFab["PPU"] ?? "").trim();
+            const matFab = String(itemFab["MAT"] ?? "").trim();
+            const regraFab = String(itemFab["REGRA"] ?? "").trim().toUpperCase();
+
+            const ppuMont = String(itemMont["PPU"] ?? "").trim();
+            const matMont = String(itemMont["MAT"] ?? "").trim();
+            const regraMont = String(itemMont["REGRA"] ?? "").trim().toUpperCase();
+
+            label = `${ppuFab} - ${matFab} - ${regraFab} / ${ppuMont} - ${matMont} - ${regraMont}`;
+        }
+
         const option = document.createElement("option");
         option.value = grupo.value;
-        option.textContent = grupo.value;
+        option.textContent = label;
         select.appendChild(option);
     });
 
-    ITENS_NAO_CONCATENAR.forEach(item => {
+    ITENS_NAO_CONCATENAR.forEach(itemCodigo => {
+        const itemBase = data.find(item =>
+            String(item["ITEM"] ?? "").trim() === itemCodigo
+        );
+
+        let label = itemCodigo;
+
+        if (itemBase) {
+            const ppu = String(itemBase["PPU"] ?? "").trim();
+            const mat = String(itemBase["MAT"] ?? "").trim();
+            const regra = String(itemBase["REGRA"] ?? "").trim().toUpperCase();
+
+            label = `${ppu} - ${mat} - ${regra}`;
+        }
+
         const option = document.createElement("option");
-        option.value = item;
-        option.textContent = item;
+        option.value = itemCodigo;
+        option.textContent = label;
         select.appendChild(option);
     });
-
-    const itensMapeados = new Set([
-        ...MAPA_CONCATENACAO_PPU.flatMap(grupo => grupo.itens),
-        ...ITENS_NAO_CONCATENAR
-    ]);
 }
 
 function configurarFiltroPpu() {
@@ -515,6 +546,9 @@ function desenharGrafico(fabricar, montar) {
                     display: false
                 },
                 tooltip: {
+                    position: "nearest",
+                    yAlign: "bottom",
+                    xAlign: "center",
                     callbacks: {
                         label(context) {
                             const valor = Number(context.raw || 0);
