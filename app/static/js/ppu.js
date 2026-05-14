@@ -170,30 +170,14 @@ function montarTabela(titulo, dados) {
 
 function carregarPPU() {
     fetch("/api/ppu")
-        .then(async res => {
-            if (!res.ok) {
-                const textoErro = await res.text();
-                throw new Error(`Erro ${res.status}: ${textoErro}`);
-            }
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             if (data.erro) {
                 alert(data.erro);
                 return;
             }
 
-            const lista = Array.isArray(data.dados) ? data.dados : [];
-
-            const elSpools = document.getElementById("spoolsTotalHeader");
-            if (elSpools) {
-                elSpools.textContent = normalizarNumero(data.spools_total).toLocaleString("pt-BR", {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0
-                });
-            }
-
-            const dadosFiltrados = lista.filter(item => {
+            const dadosFiltrados = data.filter(item => {
                 const itemTxt = texto(item["ITEM"]);
                 const descTxt = texto(item["DESCRIÇÃO"]);
 

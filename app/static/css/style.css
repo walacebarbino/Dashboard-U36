@@ -585,8 +585,3 @@ body {
     display: inline-block;
     border-radius: 0;
 }
-
-#spoolsTotalHeader {
-    font-size: 2rem;
-    font-weight: 700;
-}
