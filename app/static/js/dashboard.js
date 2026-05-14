@@ -99,7 +99,13 @@ function carregarDashboard() {
                 return;
             }
 
-            dadosOriginaisDashboard = Array.isArray(data) ? data : [];
+            dadosOriginaisDashboard = Array.isArray(data.dados) ? data.dados : [];
+
+            const elSpools = document.getElementById("spoolsTotalHeader");
+            if (elSpools) {
+                elSpools.textContent = formatarNumeroBr(data.spools_total, 0);
+            }
+            
             processarDashboard(dadosOriginaisDashboard);
             preencherFiltroPpu(dadosOriginaisDashboard);
             configurarFiltroPpu();

@@ -11,3 +11,20 @@ def ler_dados_ppu():
         return df.fillna("").to_dict(orient="records")
     except Exception as e:
         return {"erro": f"Não foi possível ler a aba PPU: {str(e)}"}
+    
+def ler_spools_total():
+    try:
+        df = pd.read_excel(
+            EXCEL_PATH,
+            sheet_name="BD-SGS_ATUAL",
+            header=None,
+            engine="openpyxl"
+        )
+
+        valor = df.iloc[6, 1]  # B7 = linha 7, coluna B
+        if pd.isna(valor):
+            return 0
+
+        return valor
+    except Exception:
+        return 0

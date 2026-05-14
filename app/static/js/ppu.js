@@ -177,7 +177,17 @@ function carregarPPU() {
                 return;
             }
 
-            const dadosFiltrados = data.filter(item => {
+            const lista = Array.isArray(data.dados) ? data.dados : [];
+
+            const elSpools = document.getElementById("spoolsTotalHeader");
+            if (elSpools) {
+                elSpools.textContent = normalizarNumero(data.spools_total).toLocaleString("pt-BR", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
+            }
+
+            const dadosFiltrados = lista.filter(item => {
                 const itemTxt = texto(item["ITEM"]);
                 const descTxt = texto(item["DESCRIÇÃO"]);
 
