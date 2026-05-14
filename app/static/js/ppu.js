@@ -170,7 +170,13 @@ function montarTabela(titulo, dados) {
 
 function carregarPPU() {
     fetch("/api/ppu")
-        .then(res => res.json())
+        .then(async res => {
+            if (!res.ok) {
+                const textoErro = await res.text();
+                throw new Error(`Erro ${res.status}: ${textoErro}`);
+            }
+            return res.json();
+        })
         .then(data => {
             if (data.erro) {
                 alert(data.erro);
