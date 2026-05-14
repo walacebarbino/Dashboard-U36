@@ -20,14 +20,14 @@ def ler_spools_total():
         df = pd.read_excel(
             EXCEL_PATH,
             sheet_name="PPU",
-            usecols="W",
             engine="openpyxl"
         )
 
-        coluna = df.columns[0]
+        df.columns = [str(col).strip() for col in df.columns]
 
-        if str(coluna).strip().upper() != "TOTAL SPOOLS":
-            raise ValueError(f"Coluna esperada 'TOTAL SPOOLS', mas encontrada: {coluna}")
+        coluna = "TOTAL SPOOLS"
+        if coluna not in df.columns:
+            raise ValueError(f"Coluna '{coluna}' não encontrada na aba PPU.")
 
         total = pd.to_numeric(df[coluna], errors="coerce").fillna(0).sum()
 
