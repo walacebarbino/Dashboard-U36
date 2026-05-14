@@ -201,7 +201,7 @@ body {
 }
 
 .search-input {
-    width: 420px;
+    width: 400px;
     max-width: 100%;
     padding: 10px 12px;
     border-radius: 10px;
@@ -209,6 +209,14 @@ body {
     background-color: #0d1117;
     color: #e6edf3;
     outline: none;
+}
+
+#filtroPpu {
+    width: 400px;
+    max-width: 100%;
+    text-align: right;
+    text-align-last: right;
+    padding-right: 36px;
 }
 
 .search-input::placeholder {
