@@ -591,5 +591,29 @@ function renderizarLegendaPpuCustom(fabricar, montar) {
     }).join("");
 }
 
+function carregarSpoolsTotal() {
+    fetch("/api/spools-total")
+        .then(async res => {
+            if (!res.ok) {
+                const textoErro = await res.text();
+                throw new Error(`Erro ${res.status}: ${textoErro}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            const elSpools = document.getElementById("spoolsTotalHeader");
+            if (elSpools) {
+                elSpools.textContent = normalizarNumero(data.spools_total).toLocaleString("pt-BR", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao carregar Spools Total:", err);
+        });
+}
+
 preencherDataAtual();
 carregarDashboard();
+carregarSpoolsTotal();

@@ -170,14 +170,22 @@ function montarTabela(titulo, dados) {
 
 function carregarPPU() {
     fetch("/api/ppu")
-        .then(res => res.json())
+        .then(async res => {
+            if (!res.ok) {
+                const textoErro = await res.text();
+                throw new Error(`Erro ${res.status}: ${textoErro}`);
+            }
+            return res.json();
+        })
         .then(data => {
             if (data.erro) {
                 alert(data.erro);
                 return;
             }
 
-            const dadosFiltrados = data.filter(item => {
+            const lista = Array.isArray(data) ? data : [];
+
+            const dadosFiltrados = lista.filter(item => {
                 const itemTxt = texto(item["ITEM"]);
                 const descTxt = texto(item["DESCRIÇÃO"]);
 
@@ -229,7 +237,11 @@ function carregarPPU() {
                 ${montarTabela("MONTAGEM", montagem)}
             `;
 
-            document.getElementById("blocosPPU").innerHTML = html;
+            const blocos = document.getElementById("blocosPPU");
+            if (blocos) {
+                blocos.innerHTML = html;
+            }
+
             ativarFiltroPPU();
         })
         .catch(err => {
@@ -252,5 +264,33 @@ function ativarFiltroPPU() {
     });
 }
 
+function carregarSpoolsTotal() {
+    fetch("/api/spools-total")
+        .then(async res => {
+            if (!res.ok) {
+                const textoErro = await res.text();
+                throw new Error(`Erro ${res.status}: ${textoErro}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            console.log("spools data:", data);
+
+            const elSpools = document.getElementById("spoolsTotalHeader");
+            console.log("elemento spools:", elSpools);
+
+            if (elSpools) {
+                elSpools.textContent = normalizarNumero(data.spools_total).toLocaleString("pt-BR", {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
+                });
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao carregar Spools Total:", err);
+        });
+}
+
 preencherDataAtual();
 carregarPPU();
+carregarSpoolsTotal();

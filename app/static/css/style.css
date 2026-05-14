@@ -585,3 +585,12 @@ body {
     display: inline-block;
     border-radius: 0;
 }
+
+.spools-header-card strong {
+    display: block;
+    font-size: 2rem;
+}
+
+.spools-header-card span {
+    display: block;
+}
