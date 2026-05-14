@@ -1,8 +1,10 @@
 import pandas as pd
 from pathlib import Path
 
+
 BASE_DIR = Path(__file__).resolve().parents[2]
 EXCEL_PATH = BASE_DIR / "data" / "INSPECAO-RIR-PPU.xlsx"
+
 
 def ler_dados_ppu():
     try:
@@ -11,20 +13,24 @@ def ler_dados_ppu():
         return df.fillna("").to_dict(orient="records")
     except Exception as e:
         return {"erro": f"Não foi possível ler a aba PPU: {str(e)}"}
-    
+
+
 def ler_spools_total():
     try:
         df = pd.read_excel(
             EXCEL_PATH,
-            sheet_name="BD-SGS_ATUAL",
-            header=None,
+            sheet_name="PPU",
+            usecols="W",
             engine="openpyxl"
         )
 
-        valor = df.iloc[6, 1]  # B7 = linha 7, coluna B
-        if pd.isna(valor):
-            return 0
+        coluna = df.columns[0]
 
-        return valor
+        if str(coluna).strip().upper() != "TOTAL SPOOLS":
+            raise ValueError(f"Coluna esperada 'TOTAL SPOOLS', mas encontrada: {coluna}")
+
+        total = pd.to_numeric(df[coluna], errors="coerce").fillna(0).sum()
+
+        return int(total)
     except Exception:
         return 0

@@ -610,8 +610,9 @@ function carregarSpoolsTotal() {
             }
         })
         .catch(err => {
-            console.error("Erro ao carregar Spools Total:", err);
-        });
+            const elSpools = document.getElementById("spoolsTotalHeader");
+            if (elSpools) elSpools.textContent = "0";
+        })
 }
 
 preencherDataAtual();
