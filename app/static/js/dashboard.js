@@ -487,7 +487,8 @@ function pluginTextoCentroGrafico() {
             const x = meta.data[0].x;
             const y = meta.data[0].y;
 
-            const valorCentro = chart.config.options.plugins.textoCentro?.valor ?? "";
+            const valorCentroBruto = chart.config.options.plugins.textoCentro?.valor ?? "";
+            const valorCentro = String(valorCentroBruto).replace(/,00$/, "");
             const subtitulo = chart.config.options.plugins.textoCentro?.subtitulo ?? "Escopo PPU";
 
             ctx.save();
