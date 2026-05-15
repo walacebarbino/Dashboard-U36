@@ -11,13 +11,18 @@ def api_ppu():
     return jsonify(dados)
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 @api_bp.route("/spools-total")
 def api_spools_total():
     try:
         total = ler_spools_total()
         return jsonify({"spools_total": total})
     except Exception as e:
-        return jsonify({"erro": str(e)}), 500
+        logger.error(f"Erro em /api/spools-total: {str(e)}", exc_info=True)
+        return jsonify({"erro": "Erro ao processar solicitação"}), 500
 
 
 @api_bp.route("/dashboard/resumo")
