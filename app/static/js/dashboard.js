@@ -217,9 +217,9 @@ function renderizarLegendaStatus(containerId, tipo = "fabricacao") {
         : "TOTAL À FABRICAR (VALID.)";
 
     const itens = [
-        { label: "CONTRATO", cor: "#4c7ee8" },
-        { label: "BASE REM. CONTRATO", cor: "#ff7a1a" },
-        { label: labelFinal, cor: "#77eb85" }
+        { label: "CONTRATO", cor: "#6f9dff" },
+        { label: "BASE REM. CONTRATO", cor: "#fa9c59" },
+        { label: labelFinal, cor: "#9bffa6" }
     ];
 
     container.innerHTML = itens.map(item => `
@@ -259,8 +259,8 @@ function renderizarGraficoStatus(canvasId, dados, tipo, maxEscala) {
                         dados.baseRem,
                         dados.totalValid
                     ],
-                    backgroundColor: ["#4c7ee8", "#ff7a1a", "#77eb85"],
-                    borderColor: ["#4c7ee8", "#ff7a1a", "#77eb85"],
+                    backgroundColor: ["#6f9dff", "#fa9c59", "#9bffa6"],
+                    borderColor: ["#6f9dff", "#fa9c59", "#9bffa6"],
                     borderWidth: 1,
                     barPercentage: 0.6,
                     categoryPercentage: 0.9
