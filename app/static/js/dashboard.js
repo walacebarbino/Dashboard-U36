@@ -263,7 +263,7 @@ function renderizarGraficoStatus(canvasId, dados, tipo, maxEscala) {
                     borderColor: ["#6f9dff", "#fa9c59", "#9bffa6"],
                     borderWidth: 1,
                     barPercentage: 0.6,
-                    categoryPercentage: 0.9
+                    categoryPercentage: 0.8
                 }
             ]
         },

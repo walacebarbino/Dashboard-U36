@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify
-from app.services.excel_service import ler_dados_ppu, ler_spools_total
+from app.services.excel_service import ler_dados_ppu, ler_spools_total, ler_spools_fabricaveis
 from app.services.dashboard_service import gerar_resumo_dashboard
+
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -31,6 +32,13 @@ def api_dashboard_resumo():
     return jsonify(resumo)
 
 
+
 @api_bp.route("/health")
 def health():
     return jsonify({"status": "ok"})
+
+
+@api_bp.route("/spools-fabricaveis")
+def api_spools_fabricaveis():
+    dados = ler_spools_fabricaveis()
+    return jsonify(dados)

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard Tubulação - CONSAG U36{% endblock %}
+{% block title %}STH - Dashboard Tubulação{% endblock %}
 
 {% block content %}
 <div class="dashboard-page">
@@ -17,20 +17,22 @@
     </header>
 
     <nav class="dashboard-nav-row">
-        <a href="{{ url_for('pages.ppu') }}" class="nav-tab active">📋 PPU</a>
+        <a href="{{ url_for('pages.ppu') }}" class="nav-tab">📋 PPU</a>
         <a href="{{ url_for('pages.dashboard') }}" class="nav-tab">📈 KPIs</a>
-        <a href="{{ url_for('pages.sth') }}" class="nav-tab">🔧 STH</a>
+        <a href="{{ url_for('pages.sth') }}" class="nav-tab active">🔧 STH</a>
         <a href="{{ url_for('pages.spools') }}" class="nav-tab">🏗️ SPOOL's</a>
     </nav>
 
-    <section class="panel panel-ppu-light">
-        <div class="panel-header panel-header-inline">
-            <h2 class="ppu-title">PPU - Tabela Detalhada</h2>
+    <section class="panel">
+        <div class="panel-header">
+            <h2>STH</h2>
+            <p class="panel-subtitle">Em desenvolvimento</p>
         </div>
-
-        <div id="blocosPPU"></div>
+        <div class="chart-area">
+            <p style="opacity: 0.6;">Em desenvolvimento</p>
+        </div>
     </section>
 </div>
 
-<script src="{{ url_for('static', filename='js/ppu.js') }}"></script>
+<script src="{{ url_for('static', filename='js/sth.js') }}"></script>
 {% endblock %}
