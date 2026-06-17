@@ -231,7 +231,26 @@ def ler_spools_fabricaveis():
         )
 
         resultado["status_final"] = resultado["status_estoque"].fillna("").astype(str).str.strip()
-        resultado["data_prevista_final"] = resultado["dt_prevista_estoque"].apply(formatar_data_br)
+
+        datas_convertidas = pd.to_datetime(
+            resultado["dt_prevista_estoque"],
+            errors="coerce",
+            cache=True
+        )
+
+        resultado["data_prevista_final"] = datas_convertidas.dt.strftime("%d/%m/%Y")
+        resultado["data_prevista_final"] = resultado["data_prevista_final"].fillna("")
+
+        mascara_invalidas = datas_convertidas.isna()
+        if mascara_invalidas.any():
+            valores_originais = resultado.loc[mascara_invalidas, "dt_prevista_estoque"].fillna("").astype(str).str.strip()
+            valores_originais = valores_originais.replace({
+                "00/01/1900": "",
+                "1900-01-00": "",
+                "NaT": "",
+                "nan": ""
+            })
+            resultado.loc[mascara_invalidas, "data_prevista_final"] = valores_originais
 
         resultado = resultado[[
             "tag",
