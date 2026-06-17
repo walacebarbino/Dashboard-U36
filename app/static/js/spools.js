@@ -76,30 +76,25 @@ function renderTabela(dados) {
 }
 
 function atualizarCards(dados) {
-    const totalItens = Array.isArray(dados) ? dados.length : 0;
-    const pesoTotal = Array.isArray(dados)
-        ? dados.reduce((acc, item) => acc + normalizarNumero(item.peso), 0)
-        : 0;
+    const lista = Array.isArray(dados) ? dados : [];
 
-    const programados = Array.isArray(dados)
-        ? dados.filter(item => String(item.status || "").trim() !== "").length
-        : 0;
+    const tagsUnicas = new Set();
+    let pesoTotal = 0;
 
-    const pesoProgramados = Array.isArray(dados)
-        ? dados
-            .filter(item => String(item.status || "").trim() !== "")
-            .reduce((acc, item) => acc + normalizarNumero(item.peso), 0)
-        : 0;
+    lista.forEach(item => {
+        const tag = String(item.tag ?? "").trim();
+        if (tag) {
+            tagsUnicas.add(tag);
+        }
 
-    const bloqueados = Array.isArray(dados)
-        ? dados.filter(item => String(item.status || "").toUpperCase().includes("AGUARDANDO")).length
-        : 0;
+        pesoTotal += normalizarNumero(item.peso ?? 0);
+    });
 
-    const pesoBloqueados = Array.isArray(dados)
-        ? dados
-            .filter(item => String(item.status || "").toUpperCase().includes("AGUARDANDO"))
-            .reduce((acc, item) => acc + normalizarNumero(item.peso), 0)
-        : 0;
+    const totalSpools = tagsUnicas.size;
+    const programados = 0;
+    const pesoProgramados = 0;
+    const bloqueados = 0;
+    const pesoBloqueados = 0;
 
     const elTotal = document.getElementById("kpiSpoolsTotal");
     const elPesoTotal = document.getElementById("kpiPesoTotalSpools");
@@ -110,7 +105,7 @@ function atualizarCards(dados) {
     const elHeader = document.getElementById("spoolsTotalHeader");
 
     if (elTotal) {
-        elTotal.innerHTML = `${formatarNumeroBR(totalItens, 0)} <span class="kpi-inline-sep">|</span> <span class="kpi-inline-extra">${formatarPesoTon(pesoTotal)}</span>`;
+        elTotal.innerHTML = `${formatarNumeroBR(totalSpools, 0)} <span class="kpi-inline-sep">|</span> <span class="kpi-inline-extra">${formatarPesoTon(pesoTotal)}</span>`;
     }
     if (elPesoTotal) elPesoTotal.textContent = "";
 
@@ -124,7 +119,7 @@ function atualizarCards(dados) {
     }
     if (elPesoBloqueados) elPesoBloqueados.textContent = "";
 
-    if (elHeader) elHeader.textContent = formatarNumeroBR(totalItens, 0);
+    if (elHeader) elHeader.textContent = formatarNumeroBR(totalSpools, 0);
 }
 
 function ativarFiltroSpools() {
