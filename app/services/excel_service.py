@@ -5,10 +5,37 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]
 EXCEL_PATH = BASE_DIR / "data" / "INSPECAO-RIR-PPU.xlsx"
 
+import threading
+
+_excel_cache = {}
+_cache_lock = threading.Lock()
+
+
+def carregar_aba_excel(sheet_name, header=0):
+    mtime = EXCEL_PATH.stat().st_mtime
+    chave = (sheet_name, header, mtime)
+
+    with _cache_lock:
+        if chave in _excel_cache:
+            return _excel_cache[chave].copy()
+
+    df = pd.read_excel(
+        EXCEL_PATH,
+        sheet_name=sheet_name,
+        header=header,
+        engine="openpyxl"
+    )
+
+    with _cache_lock:
+        _excel_cache.clear()
+        _excel_cache[chave] = df.copy()
+
+    return df.copy()
+
 
 def ler_dados_ppu():
     try:
-        df = pd.read_excel(EXCEL_PATH, sheet_name="PPU", engine="openpyxl")
+        df = carregar_aba_excel("PPU")
         df.columns = [str(col).strip() for col in df.columns]
         return df.fillna("").to_dict(orient="records")
     except Exception as e:
@@ -17,11 +44,7 @@ def ler_dados_ppu():
 
 def ler_spools_total():
     try:
-        df = pd.read_excel(
-            EXCEL_PATH,
-            sheet_name="PPU",
-            engine="openpyxl"
-        )
+        df = carregar_aba_excel("PPU")
 
         df.columns = [str(col).strip() for col in df.columns]
 
@@ -152,8 +175,12 @@ def formatar_data_br(valor):
 
 def ler_spools_fabricaveis():
     try:
-        calm_raw = pd.read_excel(EXCEL_PATH, sheet_name="CALM EMITIDAS", header=None, engine="openpyxl")
-        estoque_raw = pd.read_excel(EXCEL_PATH, sheet_name="ESTOQUE", header=None, engine="openpyxl")
+        import time
+        inicio = time.perf_counter()
+
+        calm_raw = carregar_aba_excel("CALM EMITIDAS", header=None)
+        estoque_raw = carregar_aba_excel("ESTOQUE", header=None)
+        print(f"[PERF] apos carregar abas: {time.perf_counter() - inicio:.2f}s", flush=True)
 
         idx_calm = encontrar_linha_cabecalho(calm_raw, "Código Petrobras")
         if idx_calm is None:
@@ -175,6 +202,7 @@ def ler_spools_fabricaveis():
 
         calm = preparar_cabecalho(calm_raw, idx_calm)
         estoque_df = preparar_cabecalho(estoque_raw, idx_estoque)
+        print(f"[PERF] apos preparar cabecalhos: {time.perf_counter() - inicio:.2f}s", flush=True)
 
         if "codigo_petrobras" not in calm.columns:
             calm["codigo_petrobras"] = ""
@@ -273,6 +301,7 @@ def ler_spools_fabricaveis():
         })
 
         resultado = resultado.fillna("")
+        print(f"[PERF] ler_spools_fabricaveis total: {time.perf_counter() - inicio:.2f}s", flush=True)
         return resultado.to_dict(orient="records")
 
     except Exception as e:
