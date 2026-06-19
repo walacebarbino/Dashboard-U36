@@ -1,5 +1,7 @@
 import pandas as pd
 from pathlib import Path
+from functools import lru_cache
+import threading
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -173,14 +175,11 @@ def formatar_data_br(valor):
     return data.strftime("%d/%m/%Y")
 
 
-def ler_spools_fabricaveis():
+@lru_cache(maxsize=1)
+def _carregar_spools_fabricaveis_cache():
     try:
-        import time
-        inicio = time.perf_counter()
-
         calm_raw = carregar_aba_excel("CALM EMITIDAS", header=None)
         estoque_raw = carregar_aba_excel("ESTOQUE", header=None)
-        print(f"[PERF] apos carregar abas: {time.perf_counter() - inicio:.2f}s", flush=True)
 
         idx_calm = encontrar_linha_cabecalho(calm_raw, "Código Petrobras")
         if idx_calm is None:
@@ -195,14 +194,12 @@ def ler_spools_fabricaveis():
             idx_estoque = encontrar_linha_cabecalho(estoque_raw, "Codigo Petrobras")
 
         if idx_calm is None:
-            return {"erro": "Cabeçalho da aba CALM EMITIDAS não encontrado."}
-
+            raise ValueError("Cabeçalho da aba CALM EMITIDAS não encontrado.")
         if idx_estoque is None:
-            return {"erro": "Cabeçalho da aba ESTOQUE não encontrado."}
+            raise ValueError("Cabeçalho da aba ESTOQUE não encontrado.")
 
         calm = preparar_cabecalho(calm_raw, idx_calm)
         estoque_df = preparar_cabecalho(estoque_raw, idx_estoque)
-        print(f"[PERF] apos preparar cabecalhos: {time.perf_counter() - inicio:.2f}s", flush=True)
 
         if "codigo_petrobras" not in calm.columns:
             calm["codigo_petrobras"] = ""
@@ -300,9 +297,16 @@ def ler_spools_fabricaveis():
             "data_prevista_final": "data_prevista"
         })
 
-        resultado = resultado.fillna("")
-        print(f"[PERF] ler_spools_fabricaveis total: {time.perf_counter() - inicio:.2f}s", flush=True)
-        return resultado.to_dict(orient="records")
+        return resultado.fillna("")
 
     except Exception as e:
-        return {"erro": f"Não foi possível ler os dados dos spools: {str(e)}"}
+        raise ValueError(f"Não foi possível ler os dados dos spools: {str(e)}")
+
+def ler_spools_fabricaveis():
+    try:
+        return _carregar_spools_fabricaveis_cache().to_dict(orient="records")
+    except Exception as e:
+        return {"erro": str(e)}
+
+def limpar_cache_spools():
+    _carregar_spools_fabricaveis_cache.cache_clear()
