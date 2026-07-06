@@ -191,6 +191,7 @@ function carregarPPU() {
 
                 if (!itemTxt && !descTxt) return false;
                 if (ehLinhaVazia(item)) return false;
+                if (ehSemanaAnterior(item)) return false;
 
                 return true;
             });
@@ -223,7 +224,7 @@ function carregarPPU() {
                     return;
                 }
 
-                if (ehTotal(item) || ehSemanaAnterior(item)) {
+                if (ehTotal(item)) {
                     if (blocoAtual === "FABRICAÇÃO") {
                         fabricacao.push(item);
                     } else if (blocoAtual === "MONTAGEM") {
