@@ -150,14 +150,14 @@ function processarDashboard(data) {
     const elReservadoProgramado = document.getElementById("kpiReservadoProgramado");
     const elEmEstoque = document.getElementById("kpiEmEstoque");
     const elPendRecebimento = document.getElementById("kpiPendRecebimento");
-    const elTakeOff = document.getElementById("kpiTakeOff");
+    const elRealizado = document.getElementById("kpiRealizado");
 
     if (elPesoTotalValidado) elPesoTotalValidado.textContent = formatarToneladas(totalFabricar);
     if (elIcEmitido) elIcEmitido.textContent = formatarToneladas(totalLiberado);
     if (elReservadoProgramado) elReservadoProgramado.textContent = formatarToneladas(totalProgramar);
     if (elEmEstoque) elEmEstoque.textContent = "0,00 ton";
     if (elPendRecebimento) elPendRecebimento.textContent = "0,00 ton";
-    if (elTakeOff) elTakeOff.textContent = "0,00 ton";
+    if (elRealizado) elRealizado.textContent = "0,00 ton";
 
     atualizarGraficoPpu(data, "todos");
     renderizarStatusFabricacaoMontagem(data);

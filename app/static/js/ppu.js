@@ -47,7 +47,7 @@ function ehLinhaVazia(item) {
         texto(item["Em fabricação"]),
         texto(item["Spool Bloq."]),
         texto(item["Pend. Receb."]),
-        texto(item["Take Off"])
+        texto(item["Realizado"])
     ];
 
     return campos.every(c => c === "" || c === "0" || c === "0,0" || c === "0.0");
@@ -107,7 +107,7 @@ function montarLinha(item) {
     const aProgramar          = normalizarNumero(item["Em fabricação"]);
     const spoolBloq           = normalizarNumero(item["Spool Bloq."]);
     const pendReceb           = normalizarNumero(item["Pend. Receb."]);
-    const takeOff             = normalizarNumero(item["Take Off"]);
+    const Realizado           = normalizarNumero(item["Realizado"]);
 
     if (!totalFabricar || totalFabricar === 0) {
         totalFabricar = remanescente + reparo;
@@ -127,7 +127,7 @@ function montarLinha(item) {
             <td class="col-num">${formatarNumero(aProgramar)}</td>
             <td class="col-num">${formatarNumero(spoolBloq)}</td>
             <td class="col-num">${formatarNumero(pendReceb)}</td>
-            <td class="col-num">${formatarNumero(takeOff)}</td>
+            <td class="col-num">${formatarNumero(Realizado)}</td>
         </tr>
     `;
 }
@@ -156,7 +156,7 @@ function montarTabela(titulo, dados) {
                             <th>Em fabricação</th>
                             <th>Spool Bloq.</th>
                             <th>Pend. Receb.</th>
-                            <th>Take Off</th>
+                            <th>Realizado</th>
                         </tr>
                     </thead>
                     <tbody>
