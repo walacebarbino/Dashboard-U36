@@ -616,11 +616,6 @@ function carregarSpoolsTotal() {
         })
 }
 
-preencherDataAtual();
-carregarDashboard();
-carregarSpoolsTotal();
-
-
 function formatarToneladas(valor) {
     return Number(valor || 0)
         .toLocaleString("pt-BR", {
@@ -729,5 +724,7 @@ function carregarRealizado() {
         });
 }
 
-
+preencherDataAtual();
+carregarDashboard();
+carregarSpoolsTotal();
 carregarRealizado();
