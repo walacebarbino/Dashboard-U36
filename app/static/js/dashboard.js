@@ -100,9 +100,11 @@ function carregarDashboard() {
             }
 
             dadosOriginaisDashboard = Array.isArray(data) ? data : [];
+
             processarDashboard(dadosOriginaisDashboard);
             preencherFiltroPpu(dadosOriginaisDashboard);
             configurarFiltroPpu();
+            preencherSpoolsTotalPeloPpu(dadosOriginaisDashboard);
         })
         .catch(err => {
             console.error(err);
@@ -592,6 +594,36 @@ function renderizarLegendaPpuCustom(fabricar, montar) {
     }).join("");
 }
 
+function preencherSpoolsTotalPeloPpu(dados) {
+    const elSpools = document.getElementById("spoolsTotalHeader");
+
+    if (!elSpools) return;
+
+    const total = dados.reduce((acumulado, item) => {
+        return acumulado + normalizarNumero(item["TOTAL SPOOLS"]);
+    }, 0);
+
+    elSpools.textContent = total.toLocaleString("pt-BR", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    });
+}
+
+
+function carregarSpoolsTotal() {
+    fetch("/api/spools-total")
+        .then(async res => {
+            if (!res.ok) {
+                const textoErro = await res.text();
+                throw new Error(`Erro ${res.status}: ${textoErro}`);
+            }
+
+            return res.json();
+        })
+
+        // o restante da função antiga continua aqui
+}
+
 function carregarSpoolsTotal() {
     fetch("/api/spools-total")
         .then(async res => {
@@ -726,5 +758,4 @@ function carregarRealizado() {
 
 preencherDataAtual();
 carregarDashboard();
-carregarSpoolsTotal();
 carregarRealizado();

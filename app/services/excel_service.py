@@ -12,6 +12,9 @@ import threading
 _excel_cache = {}
 _cache_lock = threading.Lock()
 
+_realizado_cache = {}
+_realizado_cache_lock = threading.Lock()
+
 
 def carregar_aba_excel(sheet_name, header=0):
     mtime = EXCEL_PATH.stat().st_mtime
@@ -383,6 +386,12 @@ def _calcular_indicador_realizado(
 
 
 def ler_dados_realizado():
+    mtime = EXCEL_PATH.stat().st_mtime
+
+    with _realizado_cache_lock:
+        if mtime in _realizado_cache:
+            return _realizado_cache[mtime].copy()
+
     try:
         raw = carregar_aba_excel(
             "BD-SGS_ATUAL",
@@ -425,7 +434,7 @@ def ler_dados_realizado():
 
         qtd_programado = int(programado.sum())
 
-        return {
+        resultado = {
             "programado": {
                 "peso_ton": round(
                     float(peso_programado) / 1000,
@@ -455,6 +464,12 @@ def ler_dados_realizado():
                 peso_programado,
             ),
         }
+
+        with _realizado_cache_lock:
+            _realizado_cache.clear()
+            _realizado_cache[mtime] = resultado.copy()
+
+        return resultado.copy()
 
     except Exception as e:
         return {
