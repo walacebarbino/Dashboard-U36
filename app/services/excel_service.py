@@ -310,3 +310,156 @@ def ler_spools_fabricaveis():
 
 def limpar_cache_spools():
     _carregar_spools_fabricaveis_cache.cache_clear()
+
+def _coluna_obrigatoria(df, nome):
+    if nome not in df.columns:
+        raise ValueError(
+            f"Coluna '{nome}' não encontrada na aba BD-SGS_ATUAL. "
+            f"Colunas disponíveis: {list(df.columns)}"
+        )
+    return nome
+
+
+def _preencher(valor):
+    if pd.isna(valor):
+        return False
+
+    return str(valor).strip() not in ("", "nan", "NaT", "None")
+
+
+def _peso_numerico(serie):
+    if isinstance(serie, pd.DataFrame):
+        serie = serie.iloc[:, 0]
+
+    valores = pd.Series(serie)
+
+    if pd.api.types.is_numeric_dtype(valores):
+        return float(
+            valores.fillna(0).sum()
+        )
+
+    valores = valores.astype(str).str.strip()
+
+    valores = valores.str.replace(
+        ",",
+        ".",
+        regex=False
+    )
+
+    valores = pd.to_numeric(
+        valores,
+        errors="coerce"
+    ).fillna(0)
+
+    return float(valores.sum())
+
+
+def _calcular_indicador_realizado(
+    df,
+    coluna_data,
+    peso_programado
+):
+    mascara_programado = df["sem_prog"].apply(_preencher)
+    mascara_etapa = df[coluna_data].apply(_preencher)
+    mascara = mascara_programado & mascara_etapa
+
+    peso = _peso_numerico(
+        df.loc[mascara, "peso_fab"]
+    )
+
+    qtd_spools = int(mascara.sum())
+
+    percentual = (
+        (peso / peso_programado) * 100
+        if peso_programado > 0
+        else 0
+    )
+
+    return {
+        "peso_ton": round(float(peso) / 1000, 1),
+        "qtd_spools": qtd_spools,
+        "percentual": round(float(percentual), 1),
+    }
+
+
+def ler_dados_realizado():
+    try:
+        raw = carregar_aba_excel(
+            "BD-SGS_ATUAL",
+            header=None
+        )
+
+        idx_header = encontrar_linha_cabecalho(
+            raw,
+            "SEM PROG"
+        )
+
+        if idx_header is None:
+            raise ValueError(
+                "Cabeçalho 'SEM PROG' não encontrado "
+                "na aba BD-SGS_ATUAL."
+            )
+
+        df = preparar_cabecalho(
+            raw,
+            idx_header
+        )
+
+        colunas = [
+            "sem_prog",
+            "peso_fab",
+            "data_corte",
+            "data_acoplam_fab",
+            "data_soldagem_fab",
+            "data_dim_fab",
+        ]
+
+        for coluna in colunas:
+            _coluna_obrigatoria(df, coluna)
+
+        programado = df["sem_prog"].apply(_preencher)
+
+        peso_programado = _peso_numerico(
+            df.loc[programado, "peso_fab"]
+        )
+
+        qtd_programado = int(programado.sum())
+
+        return {
+            "programado": {
+                "peso_ton": round(
+                    float(peso_programado) / 1000,
+                    1
+                ),
+                "qtd_spools": qtd_programado,
+                "percentual": 100.0,
+            },
+            "fabricacao_iniciada": _calcular_indicador_realizado(
+                df,
+                "data_corte",
+                peso_programado,
+            ),
+            "montagem_fabricacao": _calcular_indicador_realizado(
+                df,
+                "data_acoplam_fab",
+                peso_programado,
+            ),
+            "soldagem": _calcular_indicador_realizado(
+                df,
+                "data_soldagem_fab",
+                peso_programado,
+            ),
+            "dimensional_fab": _calcular_indicador_realizado(
+                df,
+                "data_dim_fab",
+                peso_programado,
+            ),
+        }
+
+    except Exception as e:
+        return {
+            "erro": (
+                "Não foi possível ler os dados realizados: "
+                f"{str(e)}"
+            )
+        }

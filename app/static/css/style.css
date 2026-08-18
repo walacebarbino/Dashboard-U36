@@ -871,3 +871,97 @@ body {
 .tabela-spools tbody tr:hover td {
     background-color: #18253a;
 }
+
+/* =========================
+   PAINEL REALIZADO
+========================= */
+
+#realizadoPainel {
+    margin-top: 34px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.realizado-item {
+    width: 100%;
+}
+
+.realizado-label {
+    margin-bottom: 7px;
+    color: #f2f5fa;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.realizado-linha {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.realizado-barra {
+    flex: 1;
+    height: 12px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #28313d;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.realizado-barra-preenchida {
+    height: 100%;
+    min-width: 3px;
+    border-radius: inherit;
+    transition: width 0.6s ease;
+}
+
+.realizado-programado {
+    background: linear-gradient(90deg, #4d91ff, #78adff);
+}
+
+.realizado-corte {
+    background: linear-gradient(90deg, #ff9a4d, #ffbd72);
+}
+
+.realizado-acoplamento {
+    background: linear-gradient(90deg, #a271ff, #c0a0ff);
+}
+
+.realizado-soldagem {
+    background: linear-gradient(90deg, #ff5e77, #ff8a9a);
+}
+
+.realizado-dimensional {
+    background: linear-gradient(90deg, #5bdc8d, #95f0b3);
+}
+
+.realizado-valor {
+    width: 185px;
+    flex-shrink: 0;
+    color: #e8edf5;
+    font-size: 13px;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.realizado-erro {
+    margin-top: 30px;
+    color: #ff8d9c;
+}
+
+@media (max-width: 700px) {
+    .realizado-linha {
+        display: block;
+    }
+
+    .realizado-barra {
+        width: 100%;
+    }
+
+    .realizado-valor {
+        width: auto;
+        margin-top: 7px;
+        text-align: left;
+    }
+}

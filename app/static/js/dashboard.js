@@ -619,3 +619,115 @@ function carregarSpoolsTotal() {
 preencherDataAtual();
 carregarDashboard();
 carregarSpoolsTotal();
+
+
+function formatarToneladas(valor) {
+    return Number(valor || 0)
+        .toLocaleString("pt-BR", {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+        });
+}
+
+
+function montarRealizado(dados) {
+    const painel = document.getElementById("realizadoPainel");
+
+    if (!painel) return;
+
+    const indicadores = [
+        {
+            nome: "Programado",
+            chave: "programado",
+            classe: "realizado-programado"
+        },
+        {
+            nome: "Fabricação iniciada (CO)",
+            chave: "fabricacao_iniciada",
+            classe: "realizado-corte"
+        },
+        {
+            nome: "Montagem fabricação (acoplamento)",
+            chave: "montagem_fabricacao",
+            classe: "realizado-acoplamento"
+        },
+        {
+            nome: "Soldagem",
+            chave: "soldagem",
+            classe: "realizado-soldagem"
+        },
+        {
+            nome: "Fabricado/pendente de pintura (Dimensional Fab.)",
+            chave: "dimensional_fab",
+            classe: "realizado-dimensional"
+        }
+    ];
+
+    painel.innerHTML = indicadores.map(indicador => {
+        const item = dados[indicador.chave] || {};
+        const percentual = Number(item.percentual || 0);
+        const largura = Math.min(Math.max(percentual, 0), 100);
+
+        return `
+            <div class="realizado-item">
+                <div class="realizado-label">
+                    ${indicador.nome}
+                </div>
+
+                <div class="realizado-linha">
+                    <div class="realizado-barra">
+                        <div
+                            class="realizado-barra-preenchida ${indicador.classe}"
+                            style="width: ${largura}%"
+                        ></div>
+                    </div>
+
+                    <div class="realizado-valor">
+                        ${formatarToneladas(item.peso_ton)} ton |
+                        ${Number(item.qtd_spools || 0)} spools |
+                        ${percentual.toLocaleString("pt-BR", {
+                            maximumFractionDigits: 1
+                        })}%
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+
+function carregarRealizado() {
+    const painel = document.getElementById("realizadoPainel");
+
+    if (!painel) return;
+
+    fetch("/api/realizado")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(
+                    `Erro ${response.status} ao carregar realizado`
+                );
+            }
+
+            return response.json();
+        })
+        .then(dados => {
+            if (dados.erro) {
+                throw new Error(dados.erro);
+            }
+
+            montarRealizado(dados);
+        })
+        .catch(erro => {
+            console.error("Erro ao carregar Realizado:", erro);
+
+            painel.innerHTML = `
+                <p class="realizado-erro">
+                    Não foi possível carregar os dados realizados.
+                </p>
+            `;
+        });
+}
+
+
+carregarRealizado();
