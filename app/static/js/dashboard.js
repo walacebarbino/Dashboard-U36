@@ -113,53 +113,52 @@ function carregarDashboard() {
 }
 
 function processarDashboard(data) {
-    let totalFabricar = 0;
-    let totalLiberado = 0;
-    let totalProgramar = 0;
-
     if (!Array.isArray(data)) {
         console.warn("processarDashboard: data inválido", data);
         return;
     }
 
-    data.forEach(item => {
-        const itemCodigo = item["ITEM"] ?? "";
-        const ppu = item["PPU"] ?? "";
-        const mat = item["MAT"] ?? "";
-        const regra = String(item["REGRA"] ?? "").trim().toLowerCase();
-        const descricao = item["DESCRIÇÃO"] ?? "";
+    fetch("/api/dashboard/resumo")
+        .then(res => res.json())
+        .then(resumo => {
+            const elPesoTotalValidado = document.getElementById("kpiPesoTotalValidado");
+            const elIcEmitido = document.getElementById("kpiIcEmitido");
+            const elReservadoProgramado = document.getElementById("kpiReservadoProgramado");
+            const elEmEstoque = document.getElementById("kpiEmEstoque");
+            const elRealizadoFab = document.getElementById("kpiRealizadoFab");
+            const elRealizadoMont = document.getElementById("kpiRealizadoMont");
 
-        const totalFabricarItem = normalizarNumero(item["TOTAL À FABRICAR (VALID.)"]);
-        const liberadoItem = normalizarNumero(item["LIBERADO PELA ENGENHARIA"]);
-        const programarItem = normalizarNumero(item["À Programar (Fabricação)"]);
+            if (elPesoTotalValidado) {
+                elPesoTotalValidado.textContent =
+                    formatarToneladas(resumo.peso_total_kg);
+            }
 
-        const temBase = itemCodigo || ppu || mat || regra || descricao;
-        const regraValidaParaFabricar =
-            regra.includes("fabricar") || regra.includes("montar");
+            if (elIcEmitido) {
+                elIcEmitido.textContent =
+                    formatarToneladas(resumo.inspecionado_kg);
+            }
 
-        if (temBase && regraValidaParaFabricar) {
-            totalFabricar += totalFabricarItem;
-            totalLiberado += liberadoItem;
-        }
+            if (elReservadoProgramado) {
+                elReservadoProgramado.textContent = "0,0";
+            }
 
-        if (temBase) {
-            totalProgramar += programarItem;
-        }
-    });
+            if (elEmEstoque) {
+                elEmEstoque.textContent = "0,00 ton";
+            }
 
-    const elPesoTotalValidado = document.getElementById("kpiPesoTotalValidado");
-    const elIcEmitido = document.getElementById("kpiIcEmitido");
-    const elReservadoProgramado = document.getElementById("kpiReservadoProgramado");
-    const elEmEstoque = document.getElementById("kpiEmEstoque");
-    const elPendRecebimento = document.getElementById("kpiPendRecebimento");
-    const elRealizado = document.getElementById("kpiRealizado");
+            if (elRealizadoFab) {
+                elRealizadoFab.textContent =
+                    formatarToneladas(resumo.realizado_fab_kg);
+            }
 
-    if (elPesoTotalValidado) elPesoTotalValidado.textContent = formatarToneladas(totalFabricar);
-    if (elIcEmitido) elIcEmitido.textContent = formatarToneladas(totalLiberado);
-    if (elReservadoProgramado) elReservadoProgramado.textContent = formatarToneladas(totalProgramar);
-    if (elEmEstoque) elEmEstoque.textContent = "0,00 ton";
-    if (elPendRecebimento) elPendRecebimento.textContent = "0,00 ton";
-    if (elRealizado) elRealizado.textContent = "0,00 ton";
+            if (elRealizadoMont) {
+                elRealizadoMont.textContent =
+                    formatarToneladas(resumo.realizado_mont_kg);
+            }
+        })
+        .catch(err => {
+            console.error("Erro ao carregar resumo do dashboard:", err);
+        });
 
     atualizarGraficoPpu(data, "todos");
     renderizarStatusFabricacaoMontagem(data);

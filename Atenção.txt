@@ -1,0 +1,7 @@
+Atenção apenas a isto
+Se você reiniciar e o endereço IP mudar, o dashboard continuará iniciando, porém o link muda. Se alguém disser que não abre, execute:
+
+powershell
+ipconfig
+
+e procure o novo Endereço IPv4 para atualizar o endereço compartilhado.

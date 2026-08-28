@@ -3,7 +3,6 @@ from pathlib import Path
 import re
 import unicodedata
 from openpyxl.styles import PatternFill, Font, Border, Side, Alignment
-import sys
 
 # =========================
 # 1. CAMINHOS E CONFIGURAÇÕES
@@ -16,64 +15,6 @@ ARQ_MASTER = BASE_DIR / "INSPECAO-RIR-PPU.xlsx"
 # Nomes exatos das abas (Otimizado: apenas o necessário)
 ABA_CALM = "CALM EMITIDAS"
 ABA_ESTOQUE = "ESTOQUE"
-
-# =========================
-# 1.1 MODOS DA FILA DE PRIORIDADE
-# =========================
-MODOS_PRIORIDADE = {
-    "0": {
-        "nome": "RODAR COMO ATUALMENTE",
-        "colunas": []
-    },
-    "1": {
-        "nome": "PRIORIDADE POR DIÂMETRO",
-        "colunas": ["prio_diam"]
-    },
-    "2": {
-        "nome": "PRIORIDADE POR SOP",
-        "colunas": ["prio_sop"]
-    },
-    "3": {
-        "nome": "PRIORIDADE POR SEQUÊNCIA DE MONTAGEM",
-        "colunas": ["prio_seq_mont"]
-    },
-    "4": {
-        "nome": "PRIORIDADE POR DIÂMETRO + SOP",
-        "colunas": ["prio_diam", "prio_sop"]
-    },
-    "5": {
-        "nome": "PRIORIDADE POR DIÂMETRO + SEQUÊNCIA DE MONTAGEM",
-        "colunas": ["prio_diam", "prio_seq_mont"]
-    },
-    "6": {
-        "nome": "PRIORIDADE POR SOP + SEQUÊNCIA DE MONTAGEM",
-        "colunas": ["prio_sop", "prio_seq_mont"]
-    },
-    "7": {
-        "nome": "PRIORIDADE POR DIÂMETRO + SOP + SEQUÊNCIA DE MONTAGEM",
-        "colunas": ["prio_diam", "prio_sop", "prio_seq_mont"]
-    }
-}
-
-modo_prioridade = "0"
-
-if len(sys.argv) > 1:
-    modo_informado = str(sys.argv[1]).strip()
-
-    if modo_informado in MODOS_PRIORIDADE:
-        modo_prioridade = modo_informado
-    else:
-        print(
-            f"Aviso: modo de prioridade '{modo_informado}' não reconhecido. "
-            "Será usado o modo atual."
-        )
-
-config_prioridade = MODOS_PRIORIDADE[modo_prioridade]
-
-print(
-    f"Modo de prioridade selecionado: "
-    f"{modo_prioridade} - {config_prioridade['nome']}"
-)
 
 # =========================
 # 2. FUNÇÕES AUXILIARES
@@ -99,9 +40,8 @@ def preparar_cabecalho(df, idx_header):
     df.columns = df.iloc[idx_header].astype(str).tolist()
     df = df.iloc[idx_header + 1:].reset_index(drop=True)
     df.columns = [norm_col(c) for c in df.columns]
-
+    
     novas_colunas = []
-
     for col in df.columns:
         if "codigo" in col and "petrobras" in col:
             novas_colunas.append("codigo_petrobras")
@@ -113,23 +53,9 @@ def preparar_cabecalho(df, idx_header):
             novas_colunas.append("qtd_estoque_bruto")
         else:
             novas_colunas.append(col)
-
+            
     df.columns = novas_colunas
-
-    # Remove colunas totalmente vazias, mas preserva as colunas da fila de prioridade
-    colunas_fila_prioridade = {
-        "prio_diam",
-        "prio_sop",
-        "prio_seq_mont"
-    }
-
-    mascara_colunas = (
-        ~df.isna().all(axis=0)
-        | pd.Index(df.columns).isin(colunas_fila_prioridade)
-    )
-
-    df = df.loc[:, mascara_colunas]
-
+    df = df.dropna(axis=1, how="all")
     return df
 
 
@@ -195,83 +121,42 @@ def carregar_spools_controle_liberados(caminho_arquivo):
         return set()
 
 # =========================
-# 3. REGRA DE CLASSIFICAÇÃO POR MATERIAL
+# 3. REGRA DE CLASSIFICAÇÃO
 # =========================
-def classificar_tipo_material(descricao, codigo=""):
+def classificar_familia(descricao, codigo=""):
     desc = normalizar_texto(descricao)
     cod = normalizar_texto(codigo)
     base = f"{cod} {desc}"
 
-    # Itens que não devem participar da classificação
     if "BOCA DE LOBO" in base:
-        return "EXCLUIR"
+        return "FABRICAÇÃO"
 
-    # Exceção: VGA com solda de topo faz parte da fabricação
-    if "VGA" in base and ("SOL. TOPO" in base or "SOL TOPO" in base):
-        return "FABRICAVEL"
+    if "JUNTA ESPIRAL" in base or ("JUNTA" in base and "ESPIRAL" in base):
+        return "MONTAGEM"
 
-    # Itens sempre de montagem
     if any(t in base for t in [
-        "FIGURA OITO",
-        "FIGURA 8",
-        "RAQUETE",
-        "JUNTA ",
-        "FILTRO",
-        "ENGATE-RAPIDO",
-        "ENGATE RAPIDO",
-        "DISTRIBUIDOR DE FLUXO",
-        "UNIAO ",
-        "BUCHA ",
-        "FLANGE CEGO"
+        "VALV", "VGA", "GAVETA", "GLOBO", "ESFERA", "RETENCAO", "RETENO", "FILTRO",
+        "FIGURA OITO", "FIGURA 8", "RAQUETE", "JUNTA ANEL", "JUNTA OVAL"
     ]):
-        return "MONTAGEM_FIXA"
+        return "MONTAGEM"
 
-    # Tampão/tampao roscado
-    if ("TAMPAO" in base or "TAMPÃO" in base) and " RO" in base:
-        return "MONTAGEM_FIXA"
+    if "FLANGE CEGO" in base:
+        return "MONTAGEM"
 
-    # Todas as válvulas, exceto VGA SOL. TOPO tratada acima
+    if any(t in base for t in ["C90", "J45", "CURVA 90", "JOELHO 90", "CURVA 45", "JOELHO"]):
+        return "FABRICAÇÃO"
+
+    if "TAMPAO" in base or "TAMPÃO" in base:
+        return "FABRICAÇÃO"
+
     if any(t in base for t in [
-        "VALV",
-        "V. ESFERA",
-        "V. GAVETA",
-        "V. GLOBO",
-        "V. RETENCAO",
-        "V. RETENÇÃO",
-        "VES ",
-        "VGA",
-        "VGL"
+        "TUBO", "CURVA", "REDUCAO", "REDUÇÃO",
+        "FLANGE", "LUVA", "MEIA-LUVA", "NIPLE", "NIPPLE",
+        "CAP", "TAMPO", " TE ", "TEE", "NIP RED", "SOCKOLET", "WELDOLET"
     ]):
-        return "MONTAGEM_FIXA"
+        return "FABRICAÇÃO"
 
-    # Demais itens participam da regra de diâmetro por spool
-    return "DEPENDENTE_DIAMETRO"
-
-def converter_diametro_para_mm(valor):
-    if pd.isna(valor):
-        return None
-
-    texto = str(valor).strip().upper()
-
-    if not texto or texto in {"NAN", "#N/D", "#N/A"}:
-        return None
-
-    texto = texto.replace(",", ".")
-
-    try:
-        return float(texto)
-    except ValueError:
-        pass
-
-    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:MM|MILIMETRO|MILIMETROS)", texto)
-    if match:
-        return float(match.group(1))
-
-    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:\"|POL|POLEG)", texto)
-    if match:
-        return float(match.group(1)) * 25.4
-
-    return None
+    return "VERIFICAR"
 
 # =========================
 # 4. LEITURA CENTRALIZADA DAS ABAS
@@ -287,80 +172,6 @@ if idx_calm is None:
 calm = preparar_cabecalho(calm_raw, idx_calm)
 calm.columns = dedup_cols(calm.columns)
 
-# =========================
-# 4.1.1 COLUNAS DA FILA DE PRIORIDADE
-# =========================
-COLUNAS_PRIORIDADE = [
-    'prio_diam',
-    'prio_sop',
-    'prio_seq_mont'
-]
-
-colunas_prioridade_encontradas = []
-
-for col in COLUNAS_PRIORIDADE:
-    if col in calm.columns:
-        calm[col] = pd.to_numeric(calm[col], errors='coerce')
-        colunas_prioridade_encontradas.append(col)
-
-if colunas_prioridade_encontradas:
-    print(
-        "Colunas de prioridade identificadas: "
-        + ", ".join(colunas_prioridade_encontradas)
-    )
-else:
-    print(
-        "Aviso: nenhuma coluna de prioridade foi encontrada. "
-        "O processo continuará no modo atual."
-    )
-
-# =========================
-# 4.1.2 VALIDAÇÃO DO MODO DE PRIORIDADE
-# =========================
-colunas_modo_escolhido = config_prioridade["colunas"]
-
-fila_prioridade_ativa = False
-
-if modo_prioridade == "0":
-    print("Fila de prioridade: desativada (modo atual).")
-
-elif not colunas_modo_escolhido:
-    print("Fila de prioridade: desativada (nenhuma coluna definida para o modo).")
-
-else:
-    colunas_ausentes = [
-        col for col in colunas_modo_escolhido
-        if col not in calm.columns
-    ]
-
-    if colunas_ausentes:
-        print(
-            "Aviso: coluna(s) de prioridade não encontrada(s): "
-            + ", ".join(colunas_ausentes)
-        )
-        print("Fila de prioridade: desativada. Será usado o modo atual.")
-
-    else:
-        colunas_com_valor = [
-            col for col in colunas_modo_escolhido
-            if calm[col].notna().any()
-        ]
-
-        if not colunas_com_valor:
-            print(
-                "Nenhuma prioridade preenchida em: "
-                + ", ".join(colunas_modo_escolhido)
-            )
-            print("Fila de prioridade: desativada. Será usado o modo atual.")
-
-        else:
-            fila_prioridade_ativa = True
-            print(
-                "Prioridades preenchidas identificadas em: "
-                + ", ".join(colunas_com_valor)
-            )
-            print("Fila de prioridade: ativada para esta execução.")
-
 # 4.2 Aba ESTOQUE
 estoque_raw = pd.read_excel(ARQ_MASTER, sheet_name=ABA_ESTOQUE, header=None)
 idx_estoque = encontrar_linha_cabecalho(estoque_raw, "Código Petrobras")
@@ -372,150 +183,13 @@ estoque_df.columns = dedup_cols(estoque_df.columns)
 # =========================
 calm['familia'] = calm['familia'].astype(str).str.strip().str.upper()
 
-# =========================
-# 5.0 AUDITORIA DA NOVA FAMÍLIA POR DIÂMETRO E SPOOL
-# =========================
-COLUNAS_DIAMETRO_CANDIDATAS = [
-    'diametro_1',
-    'diametro',
-    'diametro1',
-    'diametro_mm',
-    'diam'
-]
-
-col_diametro = next(
-    (col for col in COLUNAS_DIAMETRO_CANDIDATAS if col in calm.columns),
-    None
-)
-
-col_descricao = next(
-    (
-        col for col in [
-            'descricao_material',
-            'descricao',
-            'descricao_do_material'
-        ]
-        if col in calm.columns
-    ),
-    None
-)
-
-if col_descricao is None:
-    col_descricao = ''
-
-if col_diametro is None:
-    print("Aviso: nenhuma coluna de diâmetro foi encontrada para a nova classificação.")
-    calm['diametro_mm_auditoria'] = pd.NA
-else:
-    calm['diametro_mm_auditoria'] = calm[col_diametro].apply(
-        converter_diametro_para_mm
-    )
-
-calm['tipo_material_auditoria'] = calm.apply(
-    lambda row: classificar_tipo_material(
-        row.get(col_descricao, ''),
-        row.get('codigo_petrobras', '')
-    ),
-    axis=1
-)
-
-calm['spool_tem_diam_ge_60'] = False
-
-if 'isometrico_spool' in calm.columns and col_diametro is not None:
-    base_spool = calm[
-        calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    ].copy()
-
-    max_diametro_por_spool = (
-        base_spool.groupby('isometrico_spool')['diametro_mm_auditoria']
-        .max()
-    )
-
-    calm['spool_tem_diam_ge_60'] = (
-        calm['isometrico_spool']
-        .map(max_diametro_por_spool)
-        .ge(60)
-        .fillna(False)
-    )
-
-def definir_familia_nova(row):
-    tipo = row['tipo_material_auditoria']
-
-    if tipo == 'EXCLUIR':
-        return 'EXCLUIR'
-
-    if tipo == 'MONTAGEM_FIXA':
-        return 'MONTAGEM'
-
-    if tipo == 'FABRICAVEL':
-        return 'FABRICAÇÃO'
-
-    if tipo == 'DEPENDENTE_DIAMETRO':
-        if pd.isna(row['diametro_mm_auditoria']):
-            return 'VERIFICAR'
-
-        if row['spool_tem_diam_ge_60']:
-            return 'FABRICAÇÃO'
-
-        return 'MONTAGEM'
-
-    return 'VERIFICAR'
-
-calm['familia_nova'] = calm.apply(definir_familia_nova, axis=1)
-
-calm['motivo_familia_nova'] = ''
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('EXCLUIR'),
-    'motivo_familia_nova'
-] = 'BOCA DE LOBO - EXCLUÍDO'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('MONTAGEM_FIXA'),
-    'motivo_familia_nova'
-] = 'EXCEÇÃO FIXA DE MONTAGEM'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('FABRICAVEL'),
-    'motivo_familia_nova'
-] = 'VGA COM SOLDA DE TOPO'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    & calm['spool_tem_diam_ge_60'],
-    'motivo_familia_nova'
-] = 'SPOOL POSSUI MATERIAL FABRICÁVEL >= 60 MM'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    & ~calm['spool_tem_diam_ge_60']
-    & calm['diametro_mm_auditoria'].notna(),
-    'motivo_familia_nova'
-] = 'SPOOL POSSUI SOMENTE MATERIAL < 60 MM'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    & calm['diametro_mm_auditoria'].isna(),
-    'motivo_familia_nova'
-] = 'DIÂMETRO NÃO IDENTIFICADO'
-
-print(
-    "Auditoria de família criada. "
-    f"Coluna de diâmetro usada: {col_diametro if col_diametro else 'NÃO ENCONTRADA'}."
-)
-
-print(
-    "Resumo da nova família:",
-    calm['familia_nova'].value_counts(dropna=False).to_dict()
-)
-
 spools_controle_liberados = carregar_spools_controle_liberados(ARQ_MASTER)
 
 if 'isometrico_spool' in calm.columns:
     calm['isometrico_spool'] = calm['isometrico_spool'].astype(str).str.strip().str.upper()
     calm = calm[~calm['isometrico_spool'].isin(spools_controle_liberados)].copy()
 
-fabricaveis = calm[calm['familia_nova'].eq('FABRICAÇÃO')].copy()
+fabricaveis = calm[calm['familia'].eq('FABRICAÇÃO')].copy()
 
 
 # =========================
@@ -623,87 +297,23 @@ for lote in lotes_estoque:
 fabricaveis['codigo_fonte'] = fabricaveis['codigo_petrobras'].astype(str).str.strip().str.upper()
 fabricaveis['qtd'] = pd.to_numeric(fabricaveis['qtd'], errors='coerce').fillna(0)
 
-# =========================
-# 7.0 DEFINIÇÃO DA ORDEM DE PROCESSAMENTO DOS SPOOLS
-# =========================
 if 'isometrico_spool' in fabricaveis.columns:
+    fabricaveis = fabricaveis.sort_values(['isometrico_spool', 'codigo_petrobras']).copy()
     grupo_col = 'isometrico_spool'
 elif 'isometrico' in fabricaveis.columns:
+    fabricaveis = fabricaveis.sort_values(['isometrico', 'codigo_petrobras']).copy()
     grupo_col = 'isometrico'
 else:
     grupo_col = fabricaveis.columns[0]
 
-
-# Modo atual: preserva exatamente a ordenação original já usada pelo programa
-if not fila_prioridade_ativa:
-    fabricaveis = fabricaveis.sort_values(
-        [grupo_col, 'codigo_petrobras']
-    ).copy()
-
-    print(
-        "Ordem do match: modo atual "
-        f"({grupo_col} + codigo_petrobras)."
-    )
-
-else:
-    # Uma linha representativa por spool:
-    # como as prioridades são iguais em todas as linhas do mesmo spool,
-    # a primeira linha contém a prioridade daquele spool.
-    fila_spools = (
-        fabricaveis
-        .drop_duplicates(subset=[grupo_col], keep='first')
-        [[grupo_col] + colunas_modo_escolhido]
-        .copy()
-    )
-
-    # Segurança: converte novamente as prioridades em número.
-    # Campo vazio ou inválido vira NaN e vai para o fim da fila.
-    for col in colunas_modo_escolhido:
-        fila_spools[col] = pd.to_numeric(
-            fila_spools[col],
-            errors='coerce'
-        )
-
-    # Critérios de ordenação:
-    # prioridade escolhida primeiro; spool como desempate estável.
-    colunas_ordenacao = colunas_modo_escolhido + [grupo_col]
-
-    fila_spools = fila_spools.sort_values(
-        by=colunas_ordenacao,
-        ascending=True,
-        na_position='last',
-        kind='stable'
-    ).reset_index(drop=True)
-
-    # Posição explícita da fila para preservar a ordem depois do merge
-    fila_spools['ordem_fila_spool'] = range(1, len(fila_spools) + 1)
-
-    # Leva a ordem definida para todas as linhas de materiais do spool
-    fabricaveis = fabricaveis.merge(
-        fila_spools[[grupo_col, 'ordem_fila_spool']],
-        on=grupo_col,
-        how='left',
-        validate='many_to_one'
-    )
-
-    # Ordena primeiramente por spool na fila e, depois, por código de material
-    fabricaveis = fabricaveis.sort_values(
-        by=['ordem_fila_spool', 'codigo_petrobras'],
-        ascending=True,
-        na_position='last',
-        kind='stable'
-    ).copy()
-
-    print(
-        "Ordem do match: fila aplicada por "
-        + " + ".join(colunas_modo_escolhido)
-    )
-
 linhas_resultado = []
 linhas_pendente_1_mat = []
 
-for spool, grp in fabricaveis.groupby(grupo_col, sort=False):
+data_atual_sistema = pd.Timestamp.now().normalize()
+
+for spool, grp in fabricaveis.groupby(grupo_col, sort=True):
     grp = grp.copy()
+    spool_chave = str(spool).strip().upper()
 
     necessidades = (
         grp.groupby('codigo_fonte', as_index=False)['qtd']
@@ -827,16 +437,7 @@ if 'DT PREVISTA' in podendo_fabricar.columns and 'spool_fabricavel' in podendo_f
     idx = podendo_fabricar.columns.get_loc('spool_fabricavel')
     podendo_fabricar.insert(idx, 'DT PREVISTA', col)
 
-colunas_remover = [
-    'obs',
-    'codigo_fonte',
-    'diametro_mm_auditoria',
-    'tipo_material_auditoria',
-    'spool_tem_diam_ge_60',
-    'familia_nova',
-    'motivo_familia_nova'
-]
-
+colunas_remover = ['obs', 'familia_nova', 'codigo_fonte']
 podendo_fabricar = podendo_fabricar.drop(
     columns=[c for c in colunas_remover if c in podendo_fabricar.columns],
     errors='ignore'
@@ -918,7 +519,7 @@ if col_qtd_receb is not None:
 
 linhas_liberado = []
 
-for spool, grp in fabricaveis.groupby(grupo_col, sort=False):
+for spool, grp in fabricaveis.groupby(grupo_col, sort=True):
     grp = grp.copy()
     spool_chave = str(spool).strip().upper()
 
@@ -1187,6 +788,7 @@ with pd.ExcelWriter(saida, engine='openpyxl') as writer:
             # =========================
             fill_verde = PatternFill(fill_type='solid', fgColor='1CC7A1')
             fonte_normal = Font(name='Calibri', size=11, bold=False, color='000000')
+            fonte_bold = Font(name='Calibri', size=11, bold=True, color='000000')
 
             borda_fina = Border(
                 left=Side(style='thin', color='000000'),
@@ -1195,6 +797,7 @@ with pd.ExcelWriter(saida, engine='openpyxl') as writer:
                 bottom=Side(style='thin', color='000000')
             )
 
+            alinhamento_centro = Alignment(horizontal='center', vertical='center')
             alinhamento_direita = Alignment(horizontal='right', vertical='center')
             alinhamento_esquerda = Alignment(horizontal='left', vertical='center')
             worksheet.cell(row=linha_inicio, column=1).font = fonte_normal

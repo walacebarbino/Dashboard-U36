@@ -1,0 +1,19 @@
+Para executar "shellstartup" em iniciar e rodar a aplicação python local para o link funcionar para tyerceiros dentro do mesmo ambiente
+
+
+
+Modos já cadastrados no Python
+Código	Modalidade
+0	Rodar como atualmente, sem fila
+1	PRIO_DIAM
+2	PRIO_SOP
+3	PRIO_SEQ_MONT
+4	PRIO_DIAM + PRIO_SOP
+5	PRIO_DIAM + PRIO_SEQ_MONT
+6	PRIO_SOP + PRIO_SEQ_MONT
+7	PRIO_DIAM + PRIO_SOP + PRIO_SEQ_MONT
+
+ex.: py ".\Liberado-fabricar.py" 2
+
+
+
