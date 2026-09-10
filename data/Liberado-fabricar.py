@@ -195,83 +195,42 @@ def carregar_spools_controle_liberados(caminho_arquivo):
         return set()
 
 # =========================
-# 3. REGRA DE CLASSIFICAÇÃO POR MATERIAL
+# 3. REGRA DE CLASSIFICAÇÃO
 # =========================
-def classificar_tipo_material(descricao, codigo=""):
+def classificar_familia(descricao, codigo=""):
     desc = normalizar_texto(descricao)
     cod = normalizar_texto(codigo)
     base = f"{cod} {desc}"
 
-    # Itens que não devem participar da classificação
     if "BOCA DE LOBO" in base:
-        return "EXCLUIR"
+        return "FABRICAÇÃO"
 
-    # Exceção: VGA com solda de topo faz parte da fabricação
-    if "VGA" in base and ("SOL. TOPO" in base or "SOL TOPO" in base):
-        return "FABRICAVEL"
+    if "JUNTA ESPIRAL" in base or ("JUNTA" in base and "ESPIRAL" in base):
+        return "MONTAGEM"
 
-    # Itens sempre de montagem
     if any(t in base for t in [
-        "FIGURA OITO",
-        "FIGURA 8",
-        "RAQUETE",
-        "JUNTA ",
-        "FILTRO",
-        "ENGATE-RAPIDO",
-        "ENGATE RAPIDO",
-        "DISTRIBUIDOR DE FLUXO",
-        "UNIAO ",
-        "BUCHA ",
-        "FLANGE CEGO"
+        "VALV", "VGA", "GAVETA", "GLOBO", "ESFERA", "RETENCAO", "RETENO", "FILTRO",
+        "FIGURA OITO", "FIGURA 8", "RAQUETE", "JUNTA ANEL", "JUNTA OVAL"
     ]):
-        return "MONTAGEM_FIXA"
+        return "MONTAGEM"
 
-    # Tampão/tampao roscado
-    if ("TAMPAO" in base or "TAMPÃO" in base) and " RO" in base:
-        return "MONTAGEM_FIXA"
+    if "FLANGE CEGO" in base:
+        return "MONTAGEM"
 
-    # Todas as válvulas, exceto VGA SOL. TOPO tratada acima
+    if any(t in base for t in ["C90", "J45", "CURVA 90", "JOELHO 90", "CURVA 45", "JOELHO"]):
+        return "FABRICAÇÃO"
+
+    if "TAMPAO" in base or "TAMPÃO" in base:
+        return "FABRICAÇÃO"
+
     if any(t in base for t in [
-        "VALV",
-        "V. ESFERA",
-        "V. GAVETA",
-        "V. GLOBO",
-        "V. RETENCAO",
-        "V. RETENÇÃO",
-        "VES ",
-        "VGA",
-        "VGL"
+        "TUBO", "CURVA", "REDUCAO", "REDUÇÃO",
+        "FLANGE", "LUVA", "MEIA-LUVA", "NIPLE", "NIPPLE",
+        "CAP", "TAMPO", " TE ", "TEE", "NIP RED", "SOCKOLET", "WELDOLET"
     ]):
-        return "MONTAGEM_FIXA"
+        return "FABRICAÇÃO"
 
-    # Demais itens participam da regra de diâmetro por spool
-    return "DEPENDENTE_DIAMETRO"
-
-def converter_diametro_para_mm(valor):
-    if pd.isna(valor):
-        return None
-
-    texto = str(valor).strip().upper()
-
-    if not texto or texto in {"NAN", "#N/D", "#N/A"}:
-        return None
-
-    texto = texto.replace(",", ".")
-
-    try:
-        return float(texto)
-    except ValueError:
-        pass
-
-    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:MM|MILIMETRO|MILIMETROS)", texto)
-    if match:
-        return float(match.group(1))
-
-    match = re.search(r"(\d+(?:\.\d+)?)\s*(?:\"|POL|POLEG)", texto)
-    if match:
-        return float(match.group(1)) * 25.4
-
-    return None
+    return "VERIFICAR"
 
 # =========================
 # 4. LEITURA CENTRALIZADA DAS ABAS
@@ -372,150 +331,13 @@ estoque_df.columns = dedup_cols(estoque_df.columns)
 # =========================
 calm['familia'] = calm['familia'].astype(str).str.strip().str.upper()
 
-# =========================
-# 5.0 AUDITORIA DA NOVA FAMÍLIA POR DIÂMETRO E SPOOL
-# =========================
-COLUNAS_DIAMETRO_CANDIDATAS = [
-    'diametro_1',
-    'diametro',
-    'diametro1',
-    'diametro_mm',
-    'diam'
-]
-
-col_diametro = next(
-    (col for col in COLUNAS_DIAMETRO_CANDIDATAS if col in calm.columns),
-    None
-)
-
-col_descricao = next(
-    (
-        col for col in [
-            'descricao_material',
-            'descricao',
-            'descricao_do_material'
-        ]
-        if col in calm.columns
-    ),
-    None
-)
-
-if col_descricao is None:
-    col_descricao = ''
-
-if col_diametro is None:
-    print("Aviso: nenhuma coluna de diâmetro foi encontrada para a nova classificação.")
-    calm['diametro_mm_auditoria'] = pd.NA
-else:
-    calm['diametro_mm_auditoria'] = calm[col_diametro].apply(
-        converter_diametro_para_mm
-    )
-
-calm['tipo_material_auditoria'] = calm.apply(
-    lambda row: classificar_tipo_material(
-        row.get(col_descricao, ''),
-        row.get('codigo_petrobras', '')
-    ),
-    axis=1
-)
-
-calm['spool_tem_diam_ge_60'] = False
-
-if 'isometrico_spool' in calm.columns and col_diametro is not None:
-    base_spool = calm[
-        calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    ].copy()
-
-    max_diametro_por_spool = (
-        base_spool.groupby('isometrico_spool')['diametro_mm_auditoria']
-        .max()
-    )
-
-    calm['spool_tem_diam_ge_60'] = (
-        calm['isometrico_spool']
-        .map(max_diametro_por_spool)
-        .ge(60)
-        .fillna(False)
-    )
-
-def definir_familia_nova(row):
-    tipo = row['tipo_material_auditoria']
-
-    if tipo == 'EXCLUIR':
-        return 'EXCLUIR'
-
-    if tipo == 'MONTAGEM_FIXA':
-        return 'MONTAGEM'
-
-    if tipo == 'FABRICAVEL':
-        return 'FABRICAÇÃO'
-
-    if tipo == 'DEPENDENTE_DIAMETRO':
-        if pd.isna(row['diametro_mm_auditoria']):
-            return 'VERIFICAR'
-
-        if row['spool_tem_diam_ge_60']:
-            return 'FABRICAÇÃO'
-
-        return 'MONTAGEM'
-
-    return 'VERIFICAR'
-
-calm['familia_nova'] = calm.apply(definir_familia_nova, axis=1)
-
-calm['motivo_familia_nova'] = ''
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('EXCLUIR'),
-    'motivo_familia_nova'
-] = 'BOCA DE LOBO - EXCLUÍDO'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('MONTAGEM_FIXA'),
-    'motivo_familia_nova'
-] = 'EXCEÇÃO FIXA DE MONTAGEM'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('FABRICAVEL'),
-    'motivo_familia_nova'
-] = 'VGA COM SOLDA DE TOPO'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    & calm['spool_tem_diam_ge_60'],
-    'motivo_familia_nova'
-] = 'SPOOL POSSUI MATERIAL FABRICÁVEL >= 60 MM'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    & ~calm['spool_tem_diam_ge_60']
-    & calm['diametro_mm_auditoria'].notna(),
-    'motivo_familia_nova'
-] = 'SPOOL POSSUI SOMENTE MATERIAL < 60 MM'
-
-calm.loc[
-    calm['tipo_material_auditoria'].eq('DEPENDENTE_DIAMETRO')
-    & calm['diametro_mm_auditoria'].isna(),
-    'motivo_familia_nova'
-] = 'DIÂMETRO NÃO IDENTIFICADO'
-
-print(
-    "Auditoria de família criada. "
-    f"Coluna de diâmetro usada: {col_diametro if col_diametro else 'NÃO ENCONTRADA'}."
-)
-
-print(
-    "Resumo da nova família:",
-    calm['familia_nova'].value_counts(dropna=False).to_dict()
-)
-
 spools_controle_liberados = carregar_spools_controle_liberados(ARQ_MASTER)
 
 if 'isometrico_spool' in calm.columns:
     calm['isometrico_spool'] = calm['isometrico_spool'].astype(str).str.strip().str.upper()
     calm = calm[~calm['isometrico_spool'].isin(spools_controle_liberados)].copy()
 
-fabricaveis = calm[calm['familia_nova'].eq('FABRICAÇÃO')].copy()
+fabricaveis = calm[calm['familia'].eq('FABRICAÇÃO')].copy()
 
 
 # =========================
@@ -702,6 +524,8 @@ else:
 linhas_resultado = []
 linhas_pendente_1_mat = []
 
+data_atual_sistema = pd.Timestamp.now().normalize()
+
 for spool, grp in fabricaveis.groupby(grupo_col, sort=False):
     grp = grp.copy()
 
@@ -711,47 +535,73 @@ for spool, grp in fabricaveis.groupby(grupo_col, sort=False):
         .rename(columns={'qtd': 'qtd_necessaria_spool'})
     )
 
-    spool_fabricavel = True
     materiais_faltantes = []
 
-    # 7.1 Validação prévia: estoque total válido atende este spool?
+    # =========================
+    # 7.1.1 VALIDAÇÃO DE CADA MATERIAL
+    # =========================
+    # Usa o saldo atual antes do consumo deste spool.
     for _, row in necessidades.iterrows():
         cod_val = str(row['codigo_fonte']).strip().upper()
         qtd_necessaria = float(row['qtd_necessaria_spool'])
-        disponivel = float(estoque_simulado_total.get(cod_val, 0.0))
+
+        if cod_val not in estoque_simulado_total:
+            materiais_faltantes = []
+            spool_sem_cadastro_no_estoque = True
+            break
+
+        disponivel = float(estoque_simulado_total[cod_val])
 
         if disponivel < qtd_necessaria:
-            spool_fabricavel = False
             materiais_faltantes.append({
                 'codigo_fonte': cod_val,
                 'qtd_necessaria_spool': qtd_necessaria,
                 'qtd_fonte_inicial': disponivel,
                 'qtd_faltante': qtd_necessaria - disponivel
             })
+    else:
+        spool_sem_cadastro_no_estoque = False
 
-    if not spool_fabricavel:
+    if spool_sem_cadastro_no_estoque:
+        continue
+
+    # Spool não fabricável: só entra no PENDENTE se faltar exatamente 1 material.
+    if materiais_faltantes:
         if len(materiais_faltantes) == 1:
             falta = materiais_faltantes[0]
 
-            grp_pendente = grp.copy()
-            grp_pendente = grp_pendente.merge(necessidades, on='codigo_fonte', how='left')
-            grp_pendente['qtd_fonte_inicial'] = grp_pendente['codigo_fonte'].map(qtd_inicial_dict).fillna(0)
+            grp_pendente = grp[
+                grp['codigo_fonte'].eq(falta['codigo_fonte'])
+            ].copy()
+
+            grp_pendente = grp_pendente.merge(
+                necessidades,
+                on='codigo_fonte',
+                how='left'
+            )
+
+            grp_pendente['qtd_fonte_inicial'] = (
+                grp_pendente['codigo_fonte']
+                .map(qtd_inicial_dict)
+                .fillna(0)
+            )
+
             grp_pendente['spool_fabricavel'] = 'NÃO'
             grp_pendente['DT PREVISTA'] = pd.NaT
-            grp_pendente['Origem'] = ''
-
-            mask_faltante = grp_pendente['codigo_fonte'].eq(falta['codigo_fonte'])
-            grp_pendente.loc[mask_faltante, 'Origem'] = 'FALTANDO MATERIAL'
-            grp_pendente.loc[~mask_faltante, 'Origem'] = 'OK'
+            grp_pendente['Origem'] = 'FALTANDO MATERIAL'
 
             linhas_pendente_1_mat.append(grp_pendente)
 
         continue
 
+    # =========================
+    # 7.2 CONSUMO REAL E SEQUENCIAL DOS LOTES
+    # =========================
+    # O spool só chega aqui se todos os materiais tiverem saldo suficiente.
     mapa_origem_item = {}
     mapa_data_item = {}
+    consumo_temporario = []
 
-    # 7.2 Consumo real e sequencial lote por lote
     for _, row in necessidades.iterrows():
         cod = str(row['codigo_fonte']).strip().upper()
         qtd_necessaria = float(row['qtd_necessaria_spool'])
@@ -759,42 +609,100 @@ for spool, grp in fabricaveis.groupby(grupo_col, sort=False):
 
         origens_atendidas = []
         data_final_item = None
+        consumos_item = []
 
         for lote in lotes_estoque:
             if lote['codigo'] == cod and lote['saldo'] > 0:
-                data_lote = lote['dt_prevista']
+                saldo_disponivel = lote['saldo']
+                qtd_consumida = min(saldo_disponivel, qtd_restante)
 
-                if pd.notna(data_lote):
-                    if data_final_item is None or data_lote > data_final_item:
-                        data_final_item = data_lote
+                if pd.notna(lote['dt_prevista']):
+                    if (
+                        data_final_item is None
+                        or lote['dt_prevista'] > data_final_item
+                    ):
+                        data_final_item = lote['dt_prevista']
 
-                if lote['saldo'] >= qtd_restante:
-                    origens_atendidas.append(f"{lote['origem']} ({qtd_restante:.2f})")
-                    lote['saldo'] -= qtd_restante
-                    qtd_restante = 0.0
-                else:
-                    origens_atendidas.append(f"{lote['origem']} ({lote['saldo']:.2f})")
-                    qtd_restante -= lote['saldo']
-                    lote['saldo'] = 0.0
+                origens_atendidas.append(
+                    f"{lote['origem']} ({qtd_consumida:.2f})"
+                )
+
+                consumos_item.append((lote, qtd_consumida))
+                qtd_restante -= qtd_consumida
 
                 if qtd_restante <= 0:
                     break
 
-        if not origens_atendidas or data_final_item is None:
-            spool_fabricavel = False
-            break
+        if qtd_restante > 0 or not origens_atendidas:
+            materiais_faltantes.append({
+                'codigo_fonte': cod,
+                'qtd_necessaria_spool': qtd_necessaria,
+                'qtd_fonte_inicial': estoque_simulado_total.get(cod, 0.0),
+                'qtd_faltante': qtd_restante
+            })
 
+        consumo_temporario.extend(consumos_item)
         mapa_origem_item[cod] = " + ".join(origens_atendidas)
-        mapa_data_item[cod] = data_final_item if data_final_item is not None else pd.NaT
+        mapa_data_item[cod] = data_final_item
 
-    if not spool_fabricavel:
+    # Segurança: se a alocação real encontrar falta, não publica como fabricável.
+    if materiais_faltantes:
+        if len(materiais_faltantes) == 1:
+            falta = materiais_faltantes[0]
+
+            grp_pendente = grp[
+                grp['codigo_fonte'].eq(falta['codigo_fonte'])
+            ].copy()
+
+            grp_pendente = grp_pendente.merge(
+                necessidades,
+                on='codigo_fonte',
+                how='left'
+            )
+
+            grp_pendente['qtd_fonte_inicial'] = (
+                grp_pendente['codigo_fonte']
+                .map(qtd_inicial_dict)
+                .fillna(0)
+            )
+
+            grp_pendente['spool_fabricavel'] = 'NÃO'
+            grp_pendente['DT PREVISTA'] = pd.NaT
+            grp_pendente['Origem'] = 'FALTANDO MATERIAL'
+
+            linhas_pendente_1_mat.append(grp_pendente)
+
         continue
-    
-    grp = grp.merge(necessidades, on='codigo_fonte', how='left')
-    grp['qtd_fonte_inicial'] = grp['codigo_fonte'].map(qtd_inicial_dict).fillna(0)
+
+    # =========================
+    # 7.2.1 CONFIRMAÇÃO DO CONSUMO
+    # =========================
+    # Só agora confirma o consumo dos lotes.
+    for lote, qtd_consumida in consumo_temporario:
+        lote['saldo'] -= qtd_consumida
+
+    grp = grp.merge(
+        necessidades,
+        on='codigo_fonte',
+        how='left'
+    )
+
+    grp['qtd_fonte_inicial'] = (
+        grp['codigo_fonte']
+        .map(qtd_inicial_dict)
+        .fillna(0)
+    )
+
     grp['spool_fabricavel'] = 'SIM'
-    grp['Origem'] = grp['codigo_fonte'].map(mapa_origem_item).fillna('')
-    grp['DT PREVISTA_DINAMICA'] = grp['codigo_fonte'].map(mapa_data_item)
+    grp['Origem'] = (
+        grp['codigo_fonte']
+        .map(mapa_origem_item)
+        .fillna('')
+    )
+    grp['DT PREVISTA_DINAMICA'] = (
+        grp['codigo_fonte']
+        .map(mapa_data_item)
+    )
 
     linhas_resultado.append(grp)
 
@@ -827,16 +735,7 @@ if 'DT PREVISTA' in podendo_fabricar.columns and 'spool_fabricavel' in podendo_f
     idx = podendo_fabricar.columns.get_loc('spool_fabricavel')
     podendo_fabricar.insert(idx, 'DT PREVISTA', col)
 
-colunas_remover = [
-    'obs',
-    'codigo_fonte',
-    'diametro_mm_auditoria',
-    'tipo_material_auditoria',
-    'spool_tem_diam_ge_60',
-    'familia_nova',
-    'motivo_familia_nova'
-]
-
+colunas_remover = ['obs', 'familia_nova', 'codigo_fonte']
 podendo_fabricar = podendo_fabricar.drop(
     columns=[c for c in colunas_remover if c in podendo_fabricar.columns],
     errors='ignore'
@@ -1187,6 +1086,7 @@ with pd.ExcelWriter(saida, engine='openpyxl') as writer:
             # =========================
             fill_verde = PatternFill(fill_type='solid', fgColor='1CC7A1')
             fonte_normal = Font(name='Calibri', size=11, bold=False, color='000000')
+            fonte_bold = Font(name='Calibri', size=11, bold=True, color='000000')
 
             borda_fina = Border(
                 left=Side(style='thin', color='000000'),
@@ -1195,6 +1095,7 @@ with pd.ExcelWriter(saida, engine='openpyxl') as writer:
                 bottom=Side(style='thin', color='000000')
             )
 
+            alinhamento_centro = Alignment(horizontal='center', vertical='center')
             alinhamento_direita = Alignment(horizontal='right', vertical='center')
             alinhamento_esquerda = Alignment(horizontal='left', vertical='center')
             worksheet.cell(row=linha_inicio, column=1).font = fonte_normal
